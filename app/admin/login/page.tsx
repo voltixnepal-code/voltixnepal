@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Zap, Lock, Mail, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
+import { Zap, Lock, User, AlertCircle, Loader2, ShieldCheck } from 'lucide-react';
 
 export default function AdminLoginPage() {
-  const [email, setEmail] = useState('sanjeet@voltixnepal.com');
-  const [password, setPassword] = useState('Voltix2026Admin!');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('voltixnepal');
+  const [password, setPassword] = useState('Apple@50#');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -20,7 +20,11 @@ export default function AdminLoginPage() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({
+          usernameOrEmail,
+          email: usernameOrEmail,
+          password,
+        }),
       });
 
       const data = await res.json();
@@ -53,7 +57,7 @@ export default function AdminLoginPage() {
             Administrator Sign In
           </h1>
           <p className="text-xs text-slate-500">
-            Authorized management access for Sanjeet Mishra
+            Authorized management access for Voltix Nepal Admin
           </p>
         </div>
 
@@ -66,15 +70,15 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleAdminLogin} className="space-y-4">
           <div>
-            <label className="form-label">Admin Email</label>
+            <label className="form-label">Admin Username / Email</label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="sanjeet@voltixnepal.com"
+                value={usernameOrEmail}
+                onChange={(e) => setUsernameOrEmail(e.target.value)}
+                placeholder="voltixnepal"
                 className="form-input pl-9"
               />
             </div>
@@ -89,7 +93,7 @@ export default function AdminLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Apple@50#"
                 className="form-input pl-9"
               />
             </div>
