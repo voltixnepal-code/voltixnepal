@@ -43,8 +43,8 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="bg-slate-900 min-h-screen flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg border border-slate-200 p-8 shadow-2xl space-y-6">
+    <div className="bg-black min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-xl border border-neutral-200 p-8 shadow-2xl space-y-6">
         <div className="text-center space-y-2">
           <div className="w-12 h-12 rounded-lg bg-red-600 text-white flex items-center justify-center mx-auto shadow-md">
             <Zap className="w-6 h-6 fill-current" />

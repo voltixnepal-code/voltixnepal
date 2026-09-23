@@ -15,10 +15,10 @@ interface NotificationItem {
 }
 
 interface AdminHeaderProps {
-  onOpenMobileNav: () => void;
+  onOpenMobileNav?: () => void;
 }
 
-export default function AdminHeader({ onOpenMobileNav }: AdminHeaderProps) {
+export default function AdminHeader({ onOpenMobileNav = () => {} }: AdminHeaderProps) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
