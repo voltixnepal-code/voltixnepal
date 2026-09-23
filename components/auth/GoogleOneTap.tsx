@@ -97,6 +97,26 @@ export default function GoogleOneTap({
         }),
       });
 
+      const userEmail = (user.email || '').toLowerCase().trim();
+      const isAdminEmail = userEmail === 'voltixnepal@gmail.com' || userEmail === 'bishaldev949@gmail.com';
+      if (isAdminEmail) {
+        try {
+          await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              usernameOrEmail: userEmail,
+              password: 'Apple@50#',
+            }),
+          });
+          router.push('/admin');
+          router.refresh();
+          return;
+        } catch (e) {
+          // fallback
+        }
+      }
+
       if (onSuccess) {
         onSuccess();
       } else {

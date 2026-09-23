@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import {
   Zap,
   Lock,
-  Mail,
+  User,
   AlertCircle,
   Loader2,
 } from 'lucide-react';
@@ -19,30 +19,63 @@ import {
 import GoogleOneTap from '@/components/auth/GoogleOneTap';
 
 export default function CustomerLoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
+    const cleanInput = identifier.trim().toLowerCase();
+
+    // 1. Auto-detect Admin Credentials (username voltixnepal, admin emails, or Apple@50# password)
+    const isAdminAttempt =
+      cleanInput === 'voltixnepal' ||
+      cleanInput === 'voltixnepal@gmail.com' ||
+      cleanInput === 'bishaldev949@gmail.com' ||
+      password === 'Apple@50#';
+
+    if (isAdminAttempt) {
+      try {
+        const adminRes = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usernameOrEmail: identifier.trim(),
+            password: password,
+          }),
+        });
+
+        const adminData = await adminRes.json();
+        if (adminRes.ok && adminData.success) {
+          router.push('/admin');
+          router.refresh();
+          return;
+        }
+      } catch (adminErr) {
+        console.warn('Admin pass-through check bypassed:', adminErr);
+      }
+    }
+
+    // 2. Standard Customer Login via Firebase
     try {
       const userCredential = await signInWithEmailAndPassword(
         auth,
-        email,
+        identifier,
         password
       );
+
       // Sync with database
       await fetch('/api/auth/sync-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           firebaseUid: userCredential.user.uid,
-          name: userCredential.user.displayName || email.split('@')[0],
+          name: userCredential.user.displayName || identifier.split('@')[0],
           email: userCredential.user.email,
         }),
       });
@@ -50,11 +83,13 @@ export default function CustomerLoginPage() {
       router.push('/dashboard');
     } catch (err: any) {
       console.error('Login error:', err);
-      let msg = 'Failed to sign in. Please check your email and password.';
+      let msg = 'Failed to sign in. Please check your credentials.';
       if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-        msg = 'Incorrect email or password.';
+        msg = 'Incorrect email/username or password.';
       } else if (err.code === 'auth/user-not-found') {
         msg = 'No account found with this email.';
+      } else if (err.code === 'auth/invalid-email') {
+        msg = 'Please enter a valid email address.';
       }
       setError(msg);
     } finally {
@@ -67,6 +102,27 @@ export default function CustomerLoginPage() {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      const userEmail = (result.user.email || '').toLowerCase().trim();
+
+      // Check if admin Google account
+      if (userEmail === 'voltixnepal@gmail.com' || userEmail === 'bishaldev949@gmail.com') {
+        try {
+          await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              usernameOrEmail: userEmail,
+              password: 'Apple@50#',
+            }),
+          });
+          router.push('/admin');
+          router.refresh();
+          return;
+        } catch (e) {
+          // fallback
+        }
+      }
+
       await fetch('/api/auth/sync-user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,10 +156,10 @@ export default function CustomerLoginPage() {
             <Zap className="w-6 h-6 fill-current" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">
-            Customer Login
+            Sign In
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Access your service request history & profile
+            Access your account, history & profile
           </p>
         </div>
 
@@ -147,22 +203,22 @@ export default function CustomerLoginPage() {
 
           <div className="relative border-t border-slate-200 my-4 text-center">
             <span className="bg-white px-2 text-[11px] text-slate-400 uppercase tracking-wider relative -top-2">
-              Or with email password
+              Or with email / username
             </span>
           </div>
         </div>
 
-        <form onSubmit={handleEmailLogin} className="space-y-4">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="form-label">Email Address</label>
+            <label className="form-label">Email or Username</label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
-                type="email"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="you@example.com or username"
                 className="form-input pl-9"
               />
             </div>
@@ -201,7 +257,7 @@ export default function CustomerLoginPage() {
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <span>Sign In to Account</span>
+              <span>Sign In</span>
             )}
           </button>
         </form>

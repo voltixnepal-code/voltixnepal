@@ -129,11 +129,6 @@ export default function Footer({ settings }: FooterProps) {
                   Contact & Location
                 </Link>
               </li>
-              <li>
-                <Link href="/admin/login" className="text-neutral-500 hover:text-neutral-300 text-xs transition-colors block">
-                  Admin Portal Login
-                </Link>
-              </li>
             </ul>
           </div>
 
