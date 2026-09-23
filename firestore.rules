@@ -1,0 +1,127 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==========================================
+    // HELPER FUNCTIONS & ADMIN SECURITY
+    // ==========================================
+
+    // Returns true if the request is from an authenticated user
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Returns true if the user's email is an authorized VoltixNepal Admin
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email.lower() == 'voltixnepal@gmail.com' ||
+        request.auth.token.email.lower() == 'bishaldev949@gmail.com' ||
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'ADMIN'
+      );
+    }
+
+    // Returns true if user is accessing their own profile document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ==========================================
+    // 1. SERVICE REQUESTS (Customers & Admin)
+    // ==========================================
+    match /serviceRequests/{requestId} {
+      // Public can create service requests (booking form)
+      allow create: if true;
+
+      // Customers can read only their own requests; Admins can read all
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.customerEmail == request.auth.token.email
+        )
+      );
+
+      // Only Admins can update status, assign technicians, or delete
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 2. USER PROFILES
+    // ==========================================
+    match /users/{userId} {
+      // Users can read/write their own document; Admins have full access
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 3. SERVICES CATALOG (Public Read / Admin Write)
+    // ==========================================
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // 4. HERO SLIDES & HOMEPAGE SECTIONS
+    // ==========================================
+    match /heroSlides/{slideId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /homepageSections/{sectionId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // 5. BLOG POSTS & GUIDES
+    // ==========================================
+    match /blogPosts/{postId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // 6. FAQS & TESTIMONIALS
+    // ==========================================
+    match /faqs/{faqId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /testimonials/{testimonialId} {
+      allow read: if true;
+      allow create: if isAuthenticated() || true; // Customers can submit reviews
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // 7. WEBSITE SETTINGS
+    // ==========================================
+    match /websiteSettings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // 8. AUDIT LOGS & NOTIFICATIONS (Admin Private)
+    // ==========================================
+    match /auditLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /notifications/{notifId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Default deny for all other collections
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

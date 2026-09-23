@@ -1,0 +1,30 @@
+# VoltixNepal - Certified Electrical Contracting & Emergency Services in Kathmandu Valley
+
+> VoltixNepal is a professional electrical contracting service in Kathmandu Valley, Nepal, founded by lead electrician Sanjeet Mishra. We provide residential and commercial electrical installation, house wiring, short circuit diagnostics, inverter/battery installation, and 24/7 emergency repair.
+
+## Quick Facts
+- **Business Name**: VoltixNepal (Electrical Services)
+- **Lead Electrician / Founder**: Sanjeet Mishra
+- **Service Locations**: Kathmandu, Lalitpur, Bhaktapur, and Kathmandu Valley
+- **Primary Phone & WhatsApp**: +977 9825870047
+- **Official Email**: voltixnepal@gmail.com
+- **Website**: https://voltixnepal.com
+- **Operating Hours**: 24/7 Emergency Dispatch Available
+
+## Core Services
+- **Complete House Wiring & Conduit Piping**: Concealed wiring, distribution board load balancing, earthing pits, and modular switchboard fittings for new houses and renovations.
+- **24/7 Emergency Breakdown & Short Circuit Repair**: Rapid on-site fault-finding using multimeters and insulation testers to resolve tripping MCBs, phase line faults, and power blackouts.
+- **Inverter & Battery Backup Setup**: Accurate wattage load sizing, pure sine wave inverter installations, and battery maintenance.
+- **Distribution Board (DB) Upgrades & Shock Protection**: RCCB, ELCB, and MCB breaker installations to prevent electric shocks and equipment fires.
+- **Appliance Connections**: Geyser, AC lines, water pumps, and high-load commercial equipment wiring.
+
+## Key URLs
+- Homepage: https://voltixnepal.com
+- Request a Service: https://voltixnepal.com/request-service
+- Services Catalog: https://voltixnepal.com/services
+- About Sanjeet Mishra: https://voltixnepal.com/about
+- Contact Us: https://voltixnepal.com/contact
+- Electrical Safety Blog: https://voltixnepal.com/blog
+
+## Full Details
+For full technical documentation, pricing details, and safety guidelines, see https://voltixnepal.com/llms-full.txt

@@ -1,0 +1,182 @@
+// Prisma Schema for VoltixNepal
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String           @id @default(cuid())
+  firebaseUid  String?          @unique
+  name         String
+  email        String           @unique
+  phone        String?
+  role         String           @default("CUSTOMER") // "CUSTOMER" or "ADMIN"
+  isBlocked    Boolean          @default(false)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  requests     ServiceRequest[]
+}
+
+model ServiceRequest {
+  id               String   @id @default(cuid())
+  requestId        String   @unique // e.g. "VN-2026-000001"
+  userId           String?
+  user             User?    @relation(fields: [userId], references: [id])
+  customerName     String
+  customerPhone    String
+  customerEmail    String?
+  preferredContact String   @default("WHATSAPP") // "WHATSAPP", "PHONE", "EMAIL"
+  serviceId        String?
+  serviceName      String
+  urgency          String   @default("NORMAL") // "NORMAL", "URGENT", "EMERGENCY"
+  preferredDate    String?
+  preferredTime    String?
+  description      String
+  address          String
+  area             String?
+  city             String   @default("Kathmandu")
+  latitude         Float?
+  longitude        Float?
+  googleMapsUrl    String?
+  additionalNotes  String?
+  status           String   @default("NEW") // "NEW", "CONTACTED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"
+  internalNotes    String?
+  adminAssigned    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Service {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  title            String
+  shortDescription String
+  fullDescription  String
+  category         String   @default("Residential") // "Residential", "Commercial", "Emergency", "Installation"
+  priceDisplay     String?  // e.g. "Inspection from Rs. 500" or "Custom Quote"
+  imageUrl         String
+  iconName         String   @default("Wrench")
+  benefits         String   // JSON string of string array
+  includedItems    String   // JSON string of string array
+  whenNeeded       String   // JSON string of string array
+  serviceArea      String   @default("Kathmandu, Lalitpur, Bhaktapur & surrounding areas")
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model HeroSlide {
+  id               String   @id @default(cuid())
+  badge            String   @default("PROFESSIONAL ELECTRICAL SERVICES")
+  title            String
+  description      String
+  primaryBtnText   String   @default("Request a Service")
+  primaryBtnLink   String   @default("/request-service")
+  secondaryBtnText String?  @default("Call Now")
+  secondaryBtnLink String?  @default("tel:+9779800000000")
+  imageUrl         String
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Testimonial {
+  id           String   @id @default(cuid())
+  customerName String
+  location     String   @default("Kathmandu")
+  rating       Int      @default(5)
+  content      String
+  date         String
+  photoUrl     String?
+  isApproved   Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model BlogPost {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  content         String
+  summary         String
+  featuredImage   String
+  category        String   @default("Electrical Safety")
+  tags            String   @default("wiring,safety,home")
+  author          String   @default("Sanjeet Mishra")
+  seoTitle        String?
+  metaDescription String?
+  isPublished     Boolean  @default(true)
+  publishedAt     DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String   @default("General")
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model WebsiteSettings {
+  id                 String   @id @default("default_settings")
+  businessName       String   @default("VoltixNepal")
+  ownerName          String   @default("Sanjeet Mishra")
+  tagline            String   @default("Professional Electrical Services in Nepal")
+  phone              String   @default("+977 9800000000")
+  whatsappNumber     String   @default("9779800000000")
+  email              String   @default("sanjeet@voltixnepal.com")
+  address            String   @default("Kathmandu, Bagmati Province, Nepal")
+  businessHours      String   @default("Sunday - Friday: 7:00 AM - 8:00 PM | Saturday: Emergency Only")
+  emergencyAvailable Boolean  @default(true)
+  emergencyPhone     String   @default("+977 9800000000")
+  googleMapsUrl      String   @default("https://maps.google.com/?q=Kathmandu,Nepal")
+  footerText         String   @default("Reliable, safety-certified electrical installations, maintenance, and emergency repair services across Kathmandu Valley.")
+  announcementText   String?  @default("24/7 Emergency Electrical Breakdown Service Active in Kathmandu Valley")
+  announcementActive Boolean  @default(true)
+  facebookUrl        String?  @default("https://facebook.com")
+  instagramUrl       String?  @default("https://instagram.com")
+  tiktokUrl          String?  @default("https://tiktok.com")
+  youtubeUrl         String?  @default("https://youtube.com")
+  updatedAt          DateTime @updatedAt
+}
+
+model HomepageSection {
+  id         String   @id @default(cuid())
+  sectionKey String   @unique // "hero", "emergency_banner", "services", "why_choose_us", "about", "testimonials", "faq", "blog", "cta"
+  label      String
+  isEnabled  Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  updatedAt  DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String   @default("SERVICE_REQUEST") // "SERVICE_REQUEST", "CUSTOMER_SIGNUP", "SYSTEM"
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  adminEmail String
+  action     String   // e.g. "UPDATE_REQUEST_STATUS", "EDIT_SERVICE", "UPDATE_SETTINGS"
+  entityType String   // "ServiceRequest", "Service", "Settings", etc.
+  entityId   String?
+  details    String?
+  createdAt  DateTime @default(now())
+}

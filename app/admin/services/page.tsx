@@ -1,0 +1,425 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  Wrench,
+  Plus,
+  Edit2,
+  Trash2,
+  Check,
+  X,
+  Loader2,
+  RefreshCw,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
+import CloudinaryUploader from '@/components/common/CloudinaryUploader';
+
+export default function AdminServicesPage() {
+  const [services, setServices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingService, setEditingService] = useState<any | null>(null);
+  const [isNew, setIsNew] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const fetchServices = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/services?all=true');
+      const data = await res.json();
+      if (data.success) {
+        setServices(data.services || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const handleOpenEdit = (service: any) => {
+    setEditingService({
+      ...service,
+      benefitsArray: JSON.parse(service.benefits || '[]').join('\n'),
+      includedArray: JSON.parse(service.includedItems || '[]').join('\n'),
+      whenNeededArray: JSON.parse(service.whenNeeded || '[]').join('\n'),
+    });
+    setIsNew(false);
+  };
+
+  const handleOpenNew = () => {
+    setEditingService({
+      title: '',
+      slug: '',
+      shortDescription: '',
+      fullDescription: '',
+      category: 'Residential',
+      priceDisplay: 'Inspection from Rs. 500',
+      imageUrl:
+        'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=800&q=80',
+      iconName: 'Zap',
+      benefitsArray: 'Safe electrical load balancing\nQuality certified copper wires',
+      includedArray: 'Site inspection\nInsulation testing',
+      whenNeededArray: 'New house construction\nRecurring electrical short circuits',
+      serviceArea: 'Kathmandu Valley',
+      isActive: true,
+      sortOrder: services.length + 1,
+    });
+    setIsNew(true);
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const payload = {
+        title: editingService.title,
+        slug: editingService.slug || undefined,
+        shortDescription: editingService.shortDescription,
+        fullDescription: editingService.fullDescription,
+        category: editingService.category,
+        priceDisplay: editingService.priceDisplay,
+        imageUrl: editingService.imageUrl,
+        iconName: editingService.iconName,
+        benefits: editingService.benefitsArray
+          .split('\n')
+          .map((s: string) => s.trim())
+          .filter(Boolean),
+        includedItems: editingService.includedArray
+          .split('\n')
+          .map((s: string) => s.trim())
+          .filter(Boolean),
+        whenNeeded: editingService.whenNeededArray
+          .split('\n')
+          .map((s: string) => s.trim())
+          .filter(Boolean),
+        serviceArea: editingService.serviceArea,
+        isActive: editingService.isActive,
+        sortOrder: Number(editingService.sortOrder),
+      };
+
+      const url = isNew
+        ? '/api/services'
+        : `/api/services/${editingService.id}`;
+      const method = isNew ? 'POST' : 'PUT';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setEditingService(null);
+        fetchServices();
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
+    try {
+      const res = await fetch(`/api/services/${id}`, { method: 'DELETE' });
+      if (res.ok) fetchServices();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Services Management
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Add, update, or reorganize electrical service offerings and descriptions
+          </p>
+        </div>
+
+        <button
+          onClick={handleOpenNew}
+          className="btn-primary text-xs flex items-center gap-1.5 self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add New Service</span>
+        </button>
+      </div>
+
+      {/* Services List */}
+      <div className="bg-white rounded-lg border border-slate-200 shadow-2xs overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center text-xs text-slate-500">
+            Loading services...
+          </div>
+        ) : (
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-bold">
+                <th className="py-3 px-4">Order</th>
+                <th className="py-3 px-4">Title</th>
+                <th className="py-3 px-4">Category</th>
+                <th className="py-3 px-4">Price Display</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {services.map((s) => (
+                <tr key={s.id} className="hover:bg-slate-50">
+                  <td className="py-3 px-4 font-bold text-slate-500">
+                    #{s.sortOrder}
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="font-bold text-slate-900">{s.title}</div>
+                    <div className="text-[11px] text-slate-400 font-mono">
+                      /services/{s.slug}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                      {s.category}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 font-semibold text-slate-700">
+                    {s.priceDisplay || 'Quote on site'}
+                  </td>
+                  <td className="py-3 px-4">
+                    {s.isActive ? (
+                      <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold text-xs">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Active</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-slate-400 font-medium text-xs">
+                        <EyeOff className="w-3.5 h-3.5" />
+                        <span>Disabled</span>
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 text-right space-x-2">
+                    <button
+                      onClick={() => handleOpenEdit(s)}
+                      className="btn-secondary text-xs py-1 px-2.5"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(s.id, s.title)}
+                      className="btn-secondary text-xs py-1 px-2.5 text-red-600 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Edit / New Modal */}
+      {editingService && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg border border-slate-200 max-w-2xl w-full p-6 shadow-xl space-y-4 my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-base font-bold text-slate-900">
+                {isNew ? 'Create New Service' : `Edit Service: ${editingService.title}`}
+              </h2>
+              <button
+                onClick={() => setEditingService(null)}
+                className="text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label text-xs">Service Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingService.title}
+                    onChange={(e) =>
+                      setEditingService({ ...editingService, title: e.target.value })
+                    }
+                    className="form-input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">Category</label>
+                  <select
+                    value={editingService.category}
+                    onChange={(e) =>
+                      setEditingService({ ...editingService, category: e.target.value })
+                    }
+                    className="form-input text-xs bg-white"
+                  >
+                    <option value="Residential">Residential</option>
+                    <option value="Commercial">Commercial</option>
+                    <option value="Emergency">Emergency</option>
+                    <option value="Installation">Installation</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label text-xs">Price Display Text</label>
+                  <input
+                    type="text"
+                    value={editingService.priceDisplay || ''}
+                    onChange={(e) =>
+                      setEditingService({
+                        ...editingService,
+                        priceDisplay: e.target.value,
+                      })
+                    }
+                    placeholder="e.g. Diagnostic from Rs. 600"
+                    className="form-input text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <CloudinaryUploader
+                  label="Service Image / Demonstration Video (Cloudinary)"
+                  value={editingService.imageUrl}
+                  onChange={(url) =>
+                    setEditingService({ ...editingService, imageUrl: url })
+                  }
+                  folder="voltixnepal/services"
+                />
+              </div>
+
+              <div>
+                <label className="form-label text-xs">Short Summary (for cards)</label>
+                <input
+                  type="text"
+                  required
+                  value={editingService.shortDescription}
+                  onChange={(e) =>
+                    setEditingService({
+                      ...editingService,
+                      shortDescription: e.target.value,
+                    })
+                  }
+                  className="form-input text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="form-label text-xs">Full Detail Description</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={editingService.fullDescription}
+                  onChange={(e) =>
+                    setEditingService({
+                      ...editingService,
+                      fullDescription: e.target.value,
+                    })
+                  }
+                  className="form-input text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="form-label text-xs">Key Benefits (1 per line)</label>
+                  <textarea
+                    rows={3}
+                    value={editingService.benefitsArray}
+                    onChange={(e) =>
+                      setEditingService({
+                        ...editingService,
+                        benefitsArray: e.target.value,
+                      })
+                    }
+                    className="form-input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">What is Included (1 per line)</label>
+                  <textarea
+                    rows={3}
+                    value={editingService.includedArray}
+                    onChange={(e) =>
+                      setEditingService({
+                        ...editingService,
+                        includedArray: e.target.value,
+                      })
+                    }
+                    className="form-input text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="form-label text-xs">When Needed (1 per line)</label>
+                  <textarea
+                    rows={3}
+                    value={editingService.whenNeededArray}
+                    onChange={(e) =>
+                      setEditingService({
+                        ...editingService,
+                        whenNeededArray: e.target.value,
+                      })
+                    }
+                    className="form-input text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={editingService.isActive}
+                    onChange={(e) =>
+                      setEditingService({
+                        ...editingService,
+                        isActive: e.target.checked,
+                      })
+                    }
+                    className="rounded text-red-600 focus:ring-red-500"
+                  />
+                  <span className="font-semibold text-slate-800">Active / Visible on Website</span>
+                </label>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingService(null)}
+                    className="btn-secondary text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="btn-primary text-xs flex items-center gap-1.5"
+                  >
+                    {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>Save Service</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
