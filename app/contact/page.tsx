@@ -11,6 +11,7 @@ import {
   CalendarCheck,
 } from 'lucide-react';
 import { Metadata } from 'next';
+import { DEFAULT_SETTINGS } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'Contact VoltixNepal | Electrical Contractor',
@@ -21,15 +22,22 @@ export const metadata: Metadata = {
 export const revalidate = 0;
 
 export default async function ContactPage() {
-  const settings = await prisma.websiteSettings.findUnique({
-    where: { id: 'default_settings' },
-  });
+  let settings = DEFAULT_SETTINGS as any;
+
+  try {
+    const dbSettings = await prisma.websiteSettings.findUnique({
+      where: { id: 'default_settings' },
+    });
+    if (dbSettings) settings = dbSettings;
+  } catch (err) {
+    console.warn('Using default settings in Contact page:', err);
+  }
 
   const businessName = settings?.businessName || 'VoltixNepal';
   const ownerName = settings?.ownerName || 'Sanjeet Mishra';
-  const phone = settings?.phone || '+977 9800000000';
-  const whatsappNumber = settings?.whatsappNumber || '9779800000000';
-  const email = settings?.email || 'sanjeet@voltixnepal.com';
+  const phone = settings?.phone || '+977 9825870047';
+  const whatsappNumber = settings?.whatsappNumber || '9779825870047';
+  const email = settings?.email || 'voltixnepal@gmail.com';
   const address = settings?.address || 'Kathmandu, Bagmati Province, Nepal';
   const hours =
     settings?.businessHours ||
@@ -62,46 +70,52 @@ export default async function ContactPage() {
 
               <div className="space-y-4 text-xs sm:text-sm">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded bg-red-50 text-red-600 shrink-0">
+                  <div className="w-8 h-8 rounded-md bg-red-50 text-red-600 flex items-center justify-center shrink-0">
                     <Phone className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-slate-500 text-[11px] block">Direct Phone</span>
+                    <div className="text-xs text-slate-400 font-medium">Direct Phone</div>
                     <a
                       href={`tel:${phone.replace(/\s+/g, '')}`}
-                      className="font-bold text-slate-900 hover:text-red-600"
+                      className="font-bold text-slate-900 hover:text-red-600 transition-colors"
                     >
                       {phone}
                     </a>
+                    <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+                      Available for 24/7 emergencies
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded bg-emerald-50 text-emerald-600 shrink-0">
+                  <div className="w-8 h-8 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                     <MessageSquare className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-slate-500 text-[11px] block">WhatsApp Business</span>
+                    <div className="text-xs text-slate-400 font-medium">WhatsApp Dispatch</div>
                     <a
-                      href={`https://wa.me/${whatsappNumber}?text=Hello%20VoltixNepal,%20I%20need%20electrical%20service.`}
+                      href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}?text=Hello%20VoltixNepal,%20I%20need%20electrical%20assistance.`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-emerald-700 hover:underline"
+                      className="font-bold text-slate-900 hover:text-emerald-700 transition-colors"
                     >
                       +{whatsappNumber}
                     </a>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Send photos of faulty boards / MCBs
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded bg-blue-50 text-blue-600 shrink-0">
+                  <div className="w-8 h-8 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-slate-500 text-[11px] block">Email Inquiries</span>
+                    <div className="text-xs text-slate-400 font-medium">Email</div>
                     <a
                       href={`mailto:${email}`}
-                      className="font-bold text-slate-900 hover:text-red-600"
+                      className="font-bold text-slate-900 hover:text-red-600 transition-colors"
                     >
                       {email}
                     </a>
@@ -109,76 +123,88 @@ export default async function ContactPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded bg-amber-50 text-amber-600 shrink-0">
+                  <div className="w-8 h-8 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
                     <MapPin className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-slate-500 text-[11px] block">Operating Area</span>
-                    <span className="font-semibold text-slate-800">{address}</span>
+                    <div className="text-xs text-slate-400 font-medium">Coverage Area</div>
+                    <div className="font-semibold text-slate-900">{address}</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Kathmandu • Lalitpur • Bhaktapur
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="p-2 rounded bg-slate-100 text-slate-700 shrink-0">
+                  <div className="w-8 h-8 rounded-md bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
-                    <span className="text-slate-500 text-[11px] block">Operating Hours</span>
-                    <span className="font-medium text-slate-700">{hours}</span>
+                    <div className="text-xs text-slate-400 font-medium">Operating Hours</div>
+                    <div className="font-semibold text-slate-900">{hours}</div>
                   </div>
                 </div>
               </div>
 
               <div className="pt-4 border-t border-slate-100">
-                <Link
-                  href="/request-service"
-                  className="btn-primary w-full py-3 text-xs font-bold flex items-center justify-center gap-2"
+                <a
+                  href={`tel:${phone.replace(/\s+/g, '')}`}
+                  className="btn-primary w-full py-2.5 text-xs font-bold flex items-center justify-center gap-2"
                 >
-                  <CalendarCheck className="w-4 h-4" />
-                  <span>Fill Online Service Request</span>
-                </Link>
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Call {ownerName}</span>
+                </a>
               </div>
             </div>
           </div>
 
-          {/* Map Representation & Coverage (7 cols) */}
+          {/* Quick Service Request Callout (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
-            <div className="bg-white rounded-lg border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4">
-              <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-red-600" />
-                <span>Service Coverage Map & Directions</span>
-              </h3>
-              <p className="text-xs text-slate-600">
-                VoltixNepal is based in Kathmandu and serves all surrounding toles, neighborhoods, and commercial centers.
-              </p>
-
-              {/* Map Preview Box */}
-              <div className="w-full h-80 rounded-md border border-slate-200 overflow-hidden bg-slate-100 relative flex items-center justify-center">
-                <iframe
-                  title="VoltixNepal Service Area"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d113032.64621432139!2d85.2562426372074!3d27.708955944321396!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb198a307baabf%3A0xb5137c1bf18db1ea!2sKathmandu%2C%20Nepal!5e0!3m2!1sen!2snp!4v1700000000000!5m2!1sen!2snp"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen={false}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="w-full h-full"
-                />
+            <div className="bg-white rounded-lg border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">
+                  Prefer Booking Online?
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                  Use our GPS-enabled service form to submit your exact address, issue description, and preferred appointment time.
+                </p>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-xs text-slate-500">
-                  Kathmandu • Lalitpur • Bhaktapur
-                </span>
-                <a
-                  href="https://maps.google.com/?q=Kathmandu,Nepal"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs font-bold text-red-600 hover:text-red-700 underline"
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="p-4 rounded-md border border-slate-200 bg-slate-50 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <ShieldCheck className="w-4 h-4 text-red-600" />
+                    <span>Direct Dispatch</span>
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    No middlemen or agency markups. Direct contact with Sanjeet Mishra.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-md border border-slate-200 bg-slate-50 space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <Clock className="w-4 h-4 text-red-600" />
+                    <span>Emergency Priority</span>
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    Mark emergency in the form for immediate rapid technician routing.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-wrap gap-3">
+                <Link
+                  href="/request-service"
+                  className="btn-primary text-xs font-bold py-2.5 px-5"
                 >
-                  Open in Google Maps ↗
-                </a>
+                  Go to Service Request Form
+                </Link>
+                <Link
+                  href="/services"
+                  className="btn-secondary text-xs font-bold py-2.5 px-5"
+                >
+                  View All Services
+                </Link>
               </div>
             </div>
           </div>

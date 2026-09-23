@@ -15,17 +15,28 @@ import {
 } from 'lucide-react';
 import { Metadata } from 'next';
 import { generateServiceSchema, generateBreadcrumbSchema } from '@/lib/seo';
+import { DEFAULT_SERVICES } from '@/lib/default-data';
+import { DEFAULT_SETTINGS } from '@/lib/constants';
 
 interface Props {
   params: { slug: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const service = await prisma.service.findUnique({
-    where: { slug: params.slug },
-  });
+  let service: any = null;
+  try {
+    service = await prisma.service.findUnique({
+      where: { slug: params.slug },
+    });
+  } catch (e) {
+    // fallback
+  }
 
-  if (!service) return { title: 'Service Not Found' };
+  if (!service) {
+    service = DEFAULT_SERVICES.find((s) => s.slug === params.slug);
+  }
+
+  if (!service) return { title: 'Service Not Found | VoltixNepal' };
 
   return {
     title: `${service.title} | VoltixNepal`,
@@ -37,9 +48,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
   };
 }
-
-import { DEFAULT_SERVICES } from '@/lib/default-data';
-import { DEFAULT_SETTINGS } from '@/lib/constants';
 
 export const revalidate = 0;
 

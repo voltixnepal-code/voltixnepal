@@ -13,17 +13,28 @@ import {
 } from 'lucide-react';
 import { Metadata } from 'next';
 import { generateBlogPostSchema, generateBreadcrumbSchema } from '@/lib/seo';
+import { DEFAULT_BLOG_POSTS } from '@/lib/default-data';
+import { DEFAULT_SETTINGS } from '@/lib/constants';
 
 interface Props {
   params: { slug: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = await prisma.blogPost.findUnique({
-    where: { slug: params.slug },
-  });
+  let post: any = null;
+  try {
+    post = await prisma.blogPost.findUnique({
+      where: { slug: params.slug },
+    });
+  } catch (e) {
+    // fallback
+  }
 
-  if (!post) return { title: 'Article Not Found' };
+  if (!post) {
+    post = DEFAULT_BLOG_POSTS.find((p) => p.slug === params.slug);
+  }
+
+  if (!post) return { title: 'Article Not Found | VoltixNepal' };
 
   return {
     title: `${post.seoTitle || post.title} | VoltixNepal`,
@@ -37,9 +48,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export const revalidate = 0;
-
-import { DEFAULT_BLOG_POSTS } from '@/lib/default-data';
-import { DEFAULT_SETTINGS } from '@/lib/constants';
 
 export default async function BlogPostPage({ params }: Props) {
   let post: any = null;

@@ -11,6 +11,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { Metadata } from 'next';
+import { DEFAULT_SETTINGS } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'About Sanjeet Mishra & VoltixNepal',
@@ -21,12 +22,19 @@ export const metadata: Metadata = {
 export const revalidate = 0;
 
 export default async function AboutPage() {
-  const settings = await prisma.websiteSettings.findUnique({
-    where: { id: 'default_settings' },
-  });
+  let settings = DEFAULT_SETTINGS as any;
+
+  try {
+    const dbSettings = await prisma.websiteSettings.findUnique({
+      where: { id: 'default_settings' },
+    });
+    if (dbSettings) settings = dbSettings;
+  } catch (err) {
+    console.warn('Using default settings in About page:', err);
+  }
 
   const ownerName = settings?.ownerName || 'Sanjeet Mishra';
-  const businessPhone = settings?.phone || '+977 9800000000';
+  const businessPhone = settings?.phone || '+977 9825870047';
 
   return (
     <div className="bg-white min-h-screen py-10 md:py-16 w-full">
