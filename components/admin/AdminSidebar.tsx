@@ -22,17 +22,25 @@ import {
 } from 'lucide-react';
 import BrandLogo from '@/components/common/BrandLogo';
 
-interface AdminSidebarProps {
-  mobileOpen?: boolean;
-  onCloseMobile?: () => void;
-}
-
-export default function AdminSidebar({
-  mobileOpen = false,
-  onCloseMobile = () => {},
-}: AdminSidebarProps) {
+export default function AdminSidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+
+  useEffect(() => {
+    const handleToggle = () => setMobileOpen((prev) => !prev);
+    const handleClose = () => setMobileOpen(false);
+
+    window.addEventListener('toggle-admin-mobile-nav', handleToggle);
+    window.addEventListener('close-admin-mobile-nav', handleClose);
+
+    return () => {
+      window.removeEventListener('toggle-admin-mobile-nav', handleToggle);
+      window.removeEventListener('close-admin-mobile-nav', handleClose);
+    };
+  }, []);
+
+  const onCloseMobile = () => setMobileOpen(false);
 
   const navItems = [
     { label: 'Overview', href: '/admin', icon: LayoutDashboard },

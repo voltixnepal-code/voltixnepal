@@ -17,14 +17,11 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-slate-50 flex w-full">
       {/* Sidebar */}
-      <AdminSidebar
-        mobileOpen={mobileOpen}
-        onCloseMobile={() => setMobileOpen(false)}
-      />
+      <AdminSidebar />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col md:pl-64 min-w-0 w-full">
-        <AdminHeader onOpenMobileNav={() => setMobileOpen(true)} />
+        <AdminHeader />
         <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full">{children}</main>
       </div>
     </div>

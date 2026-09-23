@@ -14,14 +14,16 @@ interface NotificationItem {
   createdAt: string;
 }
 
-interface AdminHeaderProps {
-  onOpenMobileNav?: () => void;
-}
-
-export default function AdminHeader({ onOpenMobileNav = () => {} }: AdminHeaderProps) {
+export default function AdminHeader() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleOpenMobileNav = () => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('toggle-admin-mobile-nav'));
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -60,7 +62,7 @@ export default function AdminHeader({ onOpenMobileNav = () => {} }: AdminHeaderP
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 shadow-xs">
       <div className="flex items-center gap-3">
         <button
-          onClick={onOpenMobileNav}
+          onClick={handleOpenMobileNav}
           className="md:hidden p-2 rounded-md text-slate-700 hover:bg-slate-100"
           aria-label="Open Navigation"
         >
