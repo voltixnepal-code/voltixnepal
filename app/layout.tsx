@@ -1,9 +1,19 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import prisma from '@/lib/prisma';
 import { generateLocalBusinessSchema } from '@/lib/seo';
 import { DEFAULT_SETTINGS } from '@/lib/constants';
 import PublicLayoutWrapper from '@/components/layout/PublicLayoutWrapper';
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#DC2626' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F172A' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   let settings = null;
@@ -59,9 +69,22 @@ export async function generateMetadata(): Promise<Metadata> {
       title: `${businessName} | Electrical Services Nepal`,
       description: 'Expert electrician in Kathmandu for house wiring, breaker repair, and inverter setup.',
     },
+    manifest: '/manifest.webmanifest',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: 'Voltix Nepal',
+    },
     icons: {
-      icon: [{ url: '/icon.svg', type: 'image/svg+xml' }],
-      apple: [{ url: '/icon.svg', type: 'image/svg+xml' }],
+      icon: [
+        { url: '/icon.svg', type: 'image/svg+xml' },
+        { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+        { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      ],
+      apple: [
+        { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+        { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      ],
       shortcut: ['/icon.svg'],
     },
     verification: {
