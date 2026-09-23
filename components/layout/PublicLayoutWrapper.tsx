@@ -4,7 +4,6 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import QuickCallBar from '@/components/home/QuickCallBar';
 
 interface PublicLayoutWrapperProps {
   settings: any;
@@ -26,12 +25,8 @@ export default function PublicLayoutWrapper({
   return (
     <>
       <Navbar settings={settings} />
-      <main className="flex-1 pb-14 md:pb-0">{children}</main>
+      <main className="flex-1">{children}</main>
       <Footer settings={settings} />
-      <QuickCallBar
-        phone={settings.phone}
-        whatsappNumber={settings.whatsappNumber}
-      />
     </>
   );
 }
