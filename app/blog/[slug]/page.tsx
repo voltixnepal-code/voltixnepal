@@ -38,28 +38,47 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export const revalidate = 0;
 
+import { DEFAULT_BLOG_POSTS } from '@/lib/default-data';
+import { DEFAULT_SETTINGS } from '@/lib/constants';
+
 export default async function BlogPostPage({ params }: Props) {
-  const post = await prisma.blogPost.findUnique({
-    where: { slug: params.slug },
-  });
+  let post: any = null;
+  let related: any[] = [];
+  let settings: any = DEFAULT_SETTINGS;
+
+  try {
+    post = await prisma.blogPost.findUnique({
+      where: { slug: params.slug },
+    });
+    if (post) {
+      const [dbRelated, dbSettings] = await Promise.all([
+        prisma.blogPost.findMany({
+          where: {
+            id: { not: post.id },
+            isPublished: true,
+          },
+          take: 3,
+          orderBy: { publishedAt: 'desc' },
+        }).catch(() => []),
+        prisma.websiteSettings.findUnique({
+          where: { id: 'default_settings' },
+        }).catch(() => null),
+      ]);
+      if (dbRelated) related = dbRelated;
+      if (dbSettings) settings = dbSettings;
+    }
+  } catch (err) {
+    console.warn('DB error in blog detail:', err);
+  }
+
+  if (!post) {
+    post = DEFAULT_BLOG_POSTS.find((p) => p.slug === params.slug);
+    related = DEFAULT_BLOG_POSTS.filter((p) => p.slug !== params.slug).slice(0, 3);
+  }
 
   if (!post) {
     notFound();
   }
-
-  const [related, settings] = await Promise.all([
-    prisma.blogPost.findMany({
-      where: {
-        id: { not: post.id },
-        isPublished: true,
-      },
-      take: 3,
-      orderBy: { publishedAt: 'desc' },
-    }),
-    prisma.websiteSettings.findUnique({
-      where: { id: 'default_settings' },
-    }),
-  ]);
 
   const dateStr = new Date(post.publishedAt).toLocaleDateString('en-US', {
     month: 'long',
@@ -145,7 +164,7 @@ export default async function BlogPostPage({ params }: Props) {
 
           {/* Content Body with Markdown/Paragraph Rendering */}
           <div className="prose prose-slate max-w-none text-sm sm:text-base text-slate-800 leading-relaxed space-y-4">
-            {post.content.split('\n\n').map((paragraph, idx) => {
+            {post.content.split('\n\n').map((paragraph: string, idx: number) => {
               if (paragraph.startsWith('### ')) {
                 return (
                   <h3
@@ -159,7 +178,7 @@ export default async function BlogPostPage({ params }: Props) {
               if (paragraph.startsWith('1. ') || paragraph.startsWith('- ')) {
                 return (
                   <div key={idx} className="pl-4 border-l-2 border-red-500 my-2 space-y-1 text-slate-700 text-xs sm:text-sm">
-                    {paragraph.split('\n').map((line, i) => (
+                    {paragraph.split('\n').map((line: string, i: number) => (
                       <p key={i}>{line}</p>
                     ))}
                   </div>

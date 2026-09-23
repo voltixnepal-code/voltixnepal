@@ -38,33 +38,51 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+import { DEFAULT_SERVICES } from '@/lib/default-data';
+import { DEFAULT_SETTINGS } from '@/lib/constants';
+
 export const revalidate = 0;
 
 export default async function ServiceDetailPage({ params }: Props) {
-  const service = await prisma.service.findUnique({
-    where: { slug: params.slug },
-  });
+  let service: any = null;
+  let settings: any = DEFAULT_SETTINGS;
+  let otherServices: any[] = [];
+
+  try {
+    service = await prisma.service.findUnique({
+      where: { slug: params.slug },
+    });
+    const dbSettings = await prisma.websiteSettings.findUnique({
+      where: { id: 'default_settings' },
+    });
+    if (dbSettings) settings = dbSettings;
+  } catch (err) {
+    console.warn('DB read error in service detail:', err);
+  }
+
+  if (!service) {
+    service = DEFAULT_SERVICES.find((s) => s.slug === params.slug);
+  }
 
   if (!service) {
     notFound();
   }
 
-  const settings = await prisma.websiteSettings.findUnique({
-    where: { id: 'default_settings' },
-  });
-
   const benefits: string[] = JSON.parse(service.benefits || '[]');
   const includedItems: string[] = JSON.parse(service.includedItems || '[]');
   const whenNeeded: string[] = JSON.parse(service.whenNeeded || '[]');
 
-  // Fetch related services
-  const otherServices = await prisma.service.findMany({
-    where: {
-      id: { not: service.id },
-      isActive: true,
-    },
-    take: 3,
-  });
+  try {
+    otherServices = await prisma.service.findMany({
+      where: {
+        id: { not: service.id },
+        isActive: true,
+      },
+      take: 3,
+    });
+  } catch (err) {
+    otherServices = DEFAULT_SERVICES.filter((s) => s.slug !== service.slug).slice(0, 3);
+  }
 
   const businessPhone = settings?.phone || '+977 9800000000';
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';

@@ -12,6 +12,9 @@ export const metadata: Metadata = {
 
 export const revalidate = 0;
 
+import { DEFAULT_SERVICES } from '@/lib/default-data';
+import { DEFAULT_SETTINGS } from '@/lib/constants';
+
 interface RequestServicePageProps {
   searchParams: {
     service?: string;
@@ -22,16 +25,26 @@ interface RequestServicePageProps {
 export default async function RequestServicePage({
   searchParams,
 }: RequestServicePageProps) {
-  const [services, settings] = await Promise.all([
-    prisma.service.findMany({
-      where: { isActive: true },
-      select: { id: true, slug: true, title: true },
-      orderBy: { sortOrder: 'asc' },
-    }),
-    prisma.websiteSettings.findUnique({
-      where: { id: 'default_settings' },
-    }),
-  ]);
+  let services = DEFAULT_SERVICES.map((s) => ({ id: s.id, slug: s.slug, title: s.title }));
+  let settings: any = DEFAULT_SETTINGS;
+
+  try {
+    const [dbServices, dbSettings] = await Promise.all([
+      prisma.service.findMany({
+        where: { isActive: true },
+        select: { id: true, slug: true, title: true },
+        orderBy: { sortOrder: 'asc' },
+      }).catch(() => []),
+      prisma.websiteSettings.findUnique({
+        where: { id: 'default_settings' },
+      }).catch(() => null),
+    ]);
+
+    if (dbServices && dbServices.length > 0) services = dbServices;
+    if (dbSettings) settings = dbSettings;
+  } catch (err) {
+    console.warn('Using default services for booking form:', err);
+  }
 
   const defaultServiceSlug = searchParams.service;
   const defaultUrgency = searchParams.urgency || 'NORMAL';

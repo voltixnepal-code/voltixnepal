@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { Metadata } from 'next';
 
+import { DEFAULT_SERVICES } from '@/lib/default-data';
+
 export const metadata: Metadata = {
   title: 'Electrical Services in Kathmandu Valley',
   description:
@@ -20,10 +22,18 @@ export const metadata: Metadata = {
 export const revalidate = 0;
 
 export default async function ServicesPage() {
-  const services = await prisma.service.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: 'asc' },
-  });
+  let services = DEFAULT_SERVICES as any[];
+  try {
+    const dbServices = await prisma.service.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (dbServices && dbServices.length > 0) {
+      services = dbServices;
+    }
+  } catch (err) {
+    console.warn('Using default services:', err);
+  }
 
   const categories = Array.from(new Set(services.map((s) => s.category)));
 

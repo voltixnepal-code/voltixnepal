@@ -5,6 +5,8 @@ import Image from 'next/image';
 import { Calendar, User, ArrowRight } from 'lucide-react';
 import { Metadata } from 'next';
 
+import { DEFAULT_BLOG_POSTS } from '@/lib/default-data';
+
 export const metadata: Metadata = {
   title: 'Electrical Safety & Maintenance Guides | VoltixNepal',
   description:
@@ -18,27 +20,37 @@ export default async function BlogPage({
 }: {
   searchParams: { category?: string; q?: string };
 }) {
-  const whereClause: any = { isPublished: true };
-  if (searchParams.category && searchParams.category !== 'ALL') {
-    whereClause.category = searchParams.category;
-  }
-  if (searchParams.q) {
-    whereClause.OR = [
-      { title: { contains: searchParams.q } },
-      { summary: { contains: searchParams.q } },
-    ];
-  }
+  let posts = DEFAULT_BLOG_POSTS as any[];
+  let allPosts = DEFAULT_BLOG_POSTS as any[];
 
-  const [posts, allPosts] = await Promise.all([
-    prisma.blogPost.findMany({
-      where: whereClause,
-      orderBy: { publishedAt: 'desc' },
-    }),
-    prisma.blogPost.findMany({
-      where: { isPublished: true },
-      select: { category: true },
-    }),
-  ]);
+  try {
+    const whereClause: any = { isPublished: true };
+    if (searchParams.category && searchParams.category !== 'ALL') {
+      whereClause.category = searchParams.category;
+    }
+    if (searchParams.q) {
+      whereClause.OR = [
+        { title: { contains: searchParams.q } },
+        { summary: { contains: searchParams.q } },
+      ];
+    }
+
+    const [dbPosts, dbAllPosts] = await Promise.all([
+      prisma.blogPost.findMany({
+        where: whereClause,
+        orderBy: { publishedAt: 'desc' },
+      }),
+      prisma.blogPost.findMany({
+        where: { isPublished: true },
+        select: { category: true },
+      }),
+    ]);
+
+    if (dbPosts && dbPosts.length > 0) posts = dbPosts;
+    if (dbAllPosts && dbAllPosts.length > 0) allPosts = dbAllPosts;
+  } catch (err) {
+    console.warn('Using default blog posts:', err);
+  }
 
   const categories = ['ALL', ...Array.from(new Set(allPosts.map((p) => p.category)))];
 
