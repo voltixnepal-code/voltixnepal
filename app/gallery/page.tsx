@@ -34,14 +34,17 @@ export const metadata: Metadata = {
 export default async function GalleryPage() {
   let items: any[] = [];
   try {
-    items = await prisma.galleryItem.findMany({
-      where: { isPublished: true },
-      orderBy: [
-        { sortOrder: 'asc' },
-        { dateTaken: 'desc' },
-        { createdAt: 'desc' },
-      ],
-    });
+    const galleryDelegate = (prisma as any).galleryItem;
+    if (galleryDelegate) {
+      items = await galleryDelegate.findMany({
+        where: { isPublished: true },
+        orderBy: [
+          { sortOrder: 'asc' },
+          { dateTaken: 'desc' },
+          { createdAt: 'desc' },
+        ],
+      });
+    }
   } catch (err) {
     console.error('Failed to fetch gallery items:', err);
   }
