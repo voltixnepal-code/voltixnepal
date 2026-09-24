@@ -98,40 +98,41 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
         </div>
       </div>
 
-      {/* Slider Controls */}
+      {/* Slider Controls - Clean unified bottom pill */}
       {activeSlides.length > 1 && (
-        <>
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/45 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 shadow-xl">
           <button
             onClick={handlePrev}
-            className="absolute left-3 md:left-6 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/40 text-white hover:bg-red-600 transition-colors"
+            className="p-1 rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-colors"
             aria-label="Previous Slide"
           >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <button
-            onClick={handleNext}
-            className="absolute right-3 md:right-6 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/40 text-white hover:bg-red-600 transition-colors"
-            aria-label="Next Slide"
-          >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4" />
           </button>
 
           {/* Slide Indicator Dots */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-1">
             {activeSlides.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
-                className={`h-2 rounded-full transition-all ${
+                className={`h-2 rounded-full transition-all duration-300 ${
                   idx === currentIndex
-                    ? 'w-7 bg-red-600'
-                    : 'w-2 bg-white/50 hover:bg-white/80'
+                    ? 'w-6 bg-red-600'
+                    : 'w-2 bg-white/40 hover:bg-white/80'
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}
               />
             ))}
           </div>
-        </>
+
+          <button
+            onClick={handleNext}
+            className="p-1 rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+            aria-label="Next Slide"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       )}
     </section>
   );
