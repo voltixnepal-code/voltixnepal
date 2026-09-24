@@ -1,23 +1,13 @@
-# VoltixNepal — Firebase Security Rules & Admin Configuration
+# VoltixNepal — 100% Free Spark Plan Firebase Rules
 
-This document contains the complete Firebase Security Rules configured for **Cloud Firestore**, **Firebase Storage**, and **Realtime Database** with strict Admin access granted **only** to:
-1. `voltixnepal@gmail.com`
-2. `bishaldev949@gmail.com`
-
----
-
-## 📁 Rule Files in Codebase
-
-| Service | File in Project | Purpose & Limits |
-|---|---|---|
-| **Cloud Firestore** | [`firestore.rules`](./firestore.rules) | Secures bookings, gallery work items, CMS, and admin logs |
-| **Firebase Storage** | [`storage.rules`](./storage.rules) | Enforces **<100MB** limit for photos and **<500MB** limit for videos |
-| **Realtime Database** | [`database.rules.json`](./database.rules.json) | Realtime sync for gallery, requests, and notifications |
-| **Firebase Project Config** | [`firebase.json`](./firebase.json) | Multi-target deployment configuration |
+> **No Blaze Upgrade Required ($0/month Spark Plan)**
+> Media files are stored on **Cloudinary** (Photos < 100MB) and **Cloudflare R2** (Videos < 500MB). 
+> Firebase is only used for **Cloud Firestore** and **Realtime Database**.
 
 ---
 
 ## 1. Cloud Firestore Rules (`firestore.rules`)
+Copy and paste this into **Firebase Console ➔ Firestore Database ➔ Rules**:
 
 ```javascript
 rules_version = '2';
@@ -26,14 +16,12 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ==========================================
-    // ADMIN IDENTIFICATION (Strictly Restricted)
+    // ADMIN AUTHENTICATION
     // ==========================================
-
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Only voltixnepal@gmail.com and bishaldev949@gmail.com have admin privileges
     function isAdmin() {
       return isAuthenticated() && (
         request.auth.token.email.lower() == 'voltixnepal@gmail.com' ||
@@ -48,21 +36,16 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 1. SERVICE REQUESTS / BOOKINGS
+    // 1. SERVICE REQUESTS & BOOKINGS
     // ==========================================
     match /serviceRequests/{requestId} {
-      // Public / Customers can submit bookings
       allow create: if true;
-
-      // Customers read their own; Admins read all
       allow read: if isAdmin() || (
         isAuthenticated() && (
           resource.data.userId == request.auth.uid ||
           resource.data.customerEmail == request.auth.token.email
         )
       );
-
-      // Only Admins can change status, update notes, or delete
       allow update, delete: if isAdmin();
     }
 
@@ -76,17 +59,15 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 3. DAILY WORK GALLERY (Photos & Videos)
+    // 3. DAILY WORK GALLERY
     // ==========================================
     match /galleryItems/{itemId} {
-      // Public can view published work items; Admins can view all items
       allow read: if isAdmin() || resource.data.isPublished == true || !('isPublished' in resource.data);
-      // Only authenticated admins can add, edit, or delete work records
       allow write: if isAdmin();
     }
 
     // ==========================================
-    // 4. PUBLIC WEBSITE CMS DATA
+    // 4. PUBLIC WEBSITE CMS
     // ==========================================
     match /services/{serviceId} {
       allow read: if true;
@@ -135,7 +116,7 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
-    // Default protection for any other collection
+    // Default protection
     match /{document=**} {
       allow read, write: if isAdmin();
     }
@@ -145,69 +126,8 @@ service cloud.firestore {
 
 ---
 
-## 2. Firebase Storage Rules (`storage.rules`)
-
-```javascript
-rules_version = '2';
-
-service firebase.storage {
-  match /b/{bucket}/o {
-
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.email.lower() == 'voltixnepal@gmail.com' ||
-        request.auth.token.email.lower() == 'bishaldev949@gmail.com' ||
-        request.auth.token.admin == true ||
-        request.auth.token.role == 'ADMIN'
-      );
-    }
-
-    // 1. Public Assets & Logos
-    match /public/{allPaths=**} {
-      allow read: if true;
-      allow write: if isAdmin() && request.resource.size < 100 * 1024 * 1024;
-    }
-
-    // 2. Daily Work Photos (<100MB Limit)
-    match /gallery/photos/{photoId} {
-      allow read: if true;
-      allow write: if isAdmin() 
-        && request.resource.contentType.matches('image/.*')
-        && request.resource.size < 100 * 1024 * 1024;
-    }
-
-    // 3. Daily Work Videos (<500MB Limit)
-    match /gallery/videos/{videoId} {
-      allow read: if true;
-      allow write: if isAdmin() 
-        && request.resource.contentType.matches('video/.*')
-        && request.resource.size < 500 * 1024 * 1024;
-    }
-
-    // 4. Customer Fault Attachments (<25MB)
-    match /serviceRequests/{requestId}/{fileName} {
-      allow create: if request.resource.size < 25 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
-      allow read: if true;
-      allow delete: if isAdmin();
-    }
-
-    // Catch-all
-    match /{allPaths=**} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-  }
-}
-```
-
----
-
-## 3. Firebase Realtime Database Rules (`database.rules.json`)
+## 2. Realtime Database Rules (`database.rules.json`)
+Copy and paste this into **Firebase Console ➔ Realtime Database ➔ Rules**:
 
 ```json
 {
@@ -218,15 +138,15 @@ service firebase.storage {
       ".read": true,
       ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
     },
-    "galleryItems": {
-      ".read": true,
-      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
-    },
     "heroSlides": {
       ".read": true,
       ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
     },
     "websiteSettings": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
+    },
+    "galleryItems": {
       ".read": true,
       ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
     },
@@ -247,14 +167,8 @@ service firebase.storage {
 
 ---
 
-## 4. How to Deploy via Firebase CLI
+## 3. Deploy via Firebase CLI (Spark Free Plan)
 
-Run this single command from your project root:
 ```bash
-firebase deploy --only firestore:rules,storage,database
+firebase deploy --only firestore:rules,database
 ```
-
-Or copy and paste the rules directly into the **Firebase Console** under:
-- **Firestore Database** ➔ **Rules**
-- **Storage** ➔ **Rules**
-- **Realtime Database** ➔ **Rules**
