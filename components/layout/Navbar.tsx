@@ -67,7 +67,7 @@ export default function Navbar({ settings }: NavbarProps) {
       <div className="w-full px-4 sm:px-6 lg:px-10">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Brand Logo */}
-          <BrandLogo size="md" />
+          <BrandLogo size="lg" className="scale-110 sm:scale-120 md:scale-130 origin-left" />
 
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-7">

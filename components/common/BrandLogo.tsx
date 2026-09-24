@@ -22,10 +22,10 @@ export default function BrandLogo({
 
   // Height sizing for the logo - scaled up for prominence without stretching navbar
   const heightClasses = {
-    sm: 'h-8 sm:h-9 max-w-[170px] sm:max-w-[200px]',
-    md: 'h-11 sm:h-13 md:h-16 max-w-[260px] sm:max-w-[320px] md:max-w-[380px]',
-    lg: 'h-14 sm:h-16 md:h-20 max-w-[300px] sm:max-w-[380px] md:max-w-[420px]',
-    xl: 'h-18 sm:h-22 md:h-26 max-w-[360px] sm:max-w-[460px]',
+    sm: 'h-10 sm:h-12 max-w-[220px]',
+    md: 'h-14 sm:h-16 md:h-18 max-w-[320px] sm:max-w-[420px]',
+    lg: 'h-16 sm:h-20 md:h-24 max-w-[380px] sm:max-w-[480px]',
+    xl: 'h-20 sm:h-24 md:h-30 max-w-[440px] sm:max-w-[560px]',
   }[size];
 
   const logoSrc =
