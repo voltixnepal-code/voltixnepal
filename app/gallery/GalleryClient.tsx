@@ -166,7 +166,7 @@ export default function GalleryClient({ initialItems }: { initialItems: GalleryI
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5 gap-6">
           {filteredItems.map((item) => {
             const isVideo = item.mediaType === 'VIDEO';
 

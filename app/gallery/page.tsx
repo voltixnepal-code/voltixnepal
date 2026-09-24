@@ -47,20 +47,15 @@ export default async function GalleryPage() {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen py-10 sm:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="bg-slate-50 min-h-screen py-10 sm:py-14">
+      <div className="w-full px-4 sm:px-8 lg:px-12 2xl:px-16">
         {/* Header Hero */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-bold uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span>
-            <span>Verified On-Site Work Portfolio</span>
-          </div>
-
+        <div className="text-center max-w-4xl mx-auto mb-10 sm:mb-12 space-y-3">
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
             Daily Electrical Work <span className="text-red-600">Gallery & Videos</span>
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-3xl mx-auto">
             Real photos and HD demonstration videos from recent residential wiring, emergency short circuit repairs, inverter battery backups, and distribution board installations across Kathmandu Valley by Sanjit Mishra.
           </p>
         </div>
