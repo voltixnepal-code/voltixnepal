@@ -44,11 +44,11 @@ export default function Footer({ settings }: FooterProps) {
 
   return (
     <footer className="bg-black text-neutral-200 border-t border-neutral-800 w-full">
-      <div className="w-full px-4 sm:px-6 lg:px-10 pt-14 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+      <div className="w-full px-4 sm:px-6 lg:px-10 pt-8 pb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
           {/* Col 1: Brand & About */}
-          <div className="space-y-4">
+          <div className="lg:col-span-4 space-y-3">
             <BrandLogo variant="light" size="md" />
             <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal">
               {footerText}
@@ -59,121 +59,124 @@ export default function Footer({ settings }: FooterProps) {
             </div>
           </div>
 
-          {/* Col 2: Services */}
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-red-600 pl-2.5">
-              Our Services
-            </h3>
-            <ul className="space-y-2.5 text-xs sm:text-sm text-neutral-300">
-              <li>
-                <Link href="/services/house-wiring" className="hover:text-white hover:underline transition-colors block">
-                  House Wiring & Piping
-                </Link>
-              </li>
-              <li>
-                <Link href="/services/fault-finding-repair" className="hover:text-white hover:underline transition-colors block">
-                  Short Circuit & Fault Finding
-                </Link>
-              </li>
-              <li>
-                <Link href="/services/mcb-distribution-board" className="hover:text-white hover:underline transition-colors block">
-                  MCB & Distribution Boards
-                </Link>
-              </li>
-              <li>
-                <Link href="/services/inverter-battery-installation" className="hover:text-white hover:underline transition-colors block">
-                  Inverter & Battery Setup
-                </Link>
-              </li>
-              <li>
-                <Link href="/services/switch-socket-installation" className="hover:text-white hover:underline transition-colors block">
-                  Switch, Socket & Fixtures
-                </Link>
-              </li>
-              <li>
-                <Link href="/services/earthing-surge-protection" className="hover:text-white hover:underline transition-colors block">
-                  Earthing & Grounding
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {/* 2 Sections on 1 Row: Our Services & Quick Links side-by-side */}
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:col-span-5">
+            {/* Col 2: Services */}
+            <div>
+              <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-2.5 border-l-2 border-red-600 pl-2">
+                Our Services
+              </h3>
+              <ul className="space-y-1.5 text-xs sm:text-sm text-neutral-300">
+                <li>
+                  <Link href="/services/house-wiring" className="hover:text-white hover:underline transition-colors block">
+                    House Wiring & Piping
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/services/fault-finding-repair" className="hover:text-white hover:underline transition-colors block">
+                    Short Circuit & Faults
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/services/mcb-distribution-board" className="hover:text-white hover:underline transition-colors block">
+                    MCB & DB Boards
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/services/inverter-battery-installation" className="hover:text-white hover:underline transition-colors block">
+                    Inverter & Battery
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/services/switch-socket-installation" className="hover:text-white hover:underline transition-colors block">
+                    Switch & Socket
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/services/earthing-surge-protection" className="hover:text-white hover:underline transition-colors block">
+                    Earthing & Grounding
+                  </Link>
+                </li>
+              </ul>
+            </div>
 
-          {/* Col 3: Quick Navigation */}
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-red-600 pl-2.5">
-              Quick Links
-            </h3>
-            <ul className="space-y-2.5 text-xs sm:text-sm text-neutral-300">
-              <li>
-                <Link href="/request-service" className="text-red-400 font-bold hover:text-red-300 transition-colors block">
-                  Request a Service
-                </Link>
-              </li>
-              <li>
-                <Link href="/gallery" className="text-amber-400 font-semibold hover:text-amber-300 transition-colors block">
-                  Work Gallery & Videos
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="hover:text-white hover:underline transition-colors block">
-                  About Sanjit Mishra
-                </Link>
-              </li>
-              <li>
-                <Link href="/blog" className="hover:text-white hover:underline transition-colors block">
-                  Electrical Safety Blog
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="hover:text-white hover:underline transition-colors block">
-                  Frequently Asked Questions
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-white hover:underline transition-colors block">
-                  Contact & Location
-                </Link>
-              </li>
-            </ul>
+            {/* Col 3: Quick Navigation */}
+            <div>
+              <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-2.5 border-l-2 border-red-600 pl-2">
+                Quick Links
+              </h3>
+              <ul className="space-y-1.5 text-xs sm:text-sm text-neutral-300">
+                <li>
+                  <Link href="/request-service" className="text-red-400 font-bold hover:text-red-300 transition-colors block">
+                    Request a Service
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/gallery" className="text-amber-400 font-semibold hover:text-amber-300 transition-colors block">
+                    Work Gallery & Videos
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/about" className="hover:text-white hover:underline transition-colors block">
+                    About Sanjit Mishra
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/blog" className="hover:text-white hover:underline transition-colors block">
+                    Electrical Blog
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/faq" className="hover:text-white hover:underline transition-colors block">
+                    FAQs
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="hover:text-white hover:underline transition-colors block">
+                    Contact & Location
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* Col 4: Contact Information */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-red-600 pl-2.5">
+          <div className="lg:col-span-3 space-y-2.5">
+            <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-2.5 border-l-2 border-red-600 pl-2">
               Contact & Hours
             </h3>
-            <div className="flex items-start gap-2.5 text-xs sm:text-sm text-neutral-200">
+            <div className="flex items-start gap-2 text-xs sm:text-sm text-neutral-200">
               <Phone className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
               <a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-white font-semibold transition-colors">
                 {phone}
               </a>
             </div>
-            <div className="flex items-start gap-2.5 text-xs sm:text-sm text-neutral-200">
+            <div className="flex items-start gap-2 text-xs sm:text-sm text-neutral-200">
               <Mail className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
               <a href={`mailto:${email}`} className="hover:text-white transition-colors">
                 {email}
               </a>
             </div>
-            <div className="flex items-start gap-2.5 text-xs sm:text-sm text-neutral-300">
+            <div className="flex items-start gap-2 text-xs sm:text-sm text-neutral-300">
               <MapPin className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
               <span>{address}</span>
             </div>
-            <div className="flex items-start gap-2.5 text-xs sm:text-sm text-neutral-300 pt-1">
+            <div className="flex items-start gap-2 text-xs sm:text-sm text-neutral-300 pt-0.5">
               <Clock className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
               <span className="text-xs">{hours}</span>
             </div>
 
             {/* Social links */}
-            <div className="flex items-center gap-2.5 pt-3">
+            <div className="flex items-center gap-2 pt-2">
               {settings?.facebookUrl && (
                 <a
                   href={settings.facebookUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
-                  className="p-2 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-red-600 hover:text-white transition-colors"
+                  className="p-1.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-red-600 hover:text-white transition-colors"
                 >
-                  <Facebook className="w-4 h-4" />
+                  <Facebook className="w-3.5 h-3.5" />
                 </a>
               )}
               {settings?.instagramUrl && (
@@ -182,9 +185,9 @@ export default function Footer({ settings }: FooterProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
-                  className="p-2 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-red-600 hover:text-white transition-colors"
+                  className="p-1.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-red-600 hover:text-white transition-colors"
                 >
-                  <Instagram className="w-4 h-4" />
+                  <Instagram className="w-3.5 h-3.5" />
                 </a>
               )}
               {settings?.youtubeUrl && (
@@ -193,9 +196,9 @@ export default function Footer({ settings }: FooterProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="YouTube"
-                  className="p-2 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-red-600 hover:text-white transition-colors"
+                  className="p-1.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-red-600 hover:text-white transition-colors"
                 >
-                  <Youtube className="w-4 h-4" />
+                  <Youtube className="w-3.5 h-3.5" />
                 </a>
               )}
             </div>
@@ -203,7 +206,7 @@ export default function Footer({ settings }: FooterProps) {
         </div>
 
         {/* Developer Credit & Copyright Bar */}
-        <div className="mt-12 pt-6 border-t border-neutral-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-neutral-400">
+        <div className="mt-8 pt-4 border-t border-neutral-800 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-neutral-400">
           
           {/* Copyright */}
           <p className="text-neutral-400 text-center md:text-left">
