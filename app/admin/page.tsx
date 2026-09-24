@@ -228,6 +228,13 @@ export default function AdminDashboardOverview() {
             </h3>
             <div className="space-y-2 text-xs">
               <Link
+                href="/admin/gallery"
+                className="flex items-center justify-between p-2.5 rounded-md bg-red-50 hover:bg-red-100 font-bold text-red-700 transition-colors border border-red-200"
+              >
+                <span>Upload Daily Work Photo/Video (Gallery)</span>
+                <ArrowRight className="w-3.5 h-3.5 text-red-600" />
+              </Link>
+              <Link
                 href="/admin/services"
                 className="flex items-center justify-between p-2.5 rounded-md bg-slate-50 hover:bg-slate-100 font-semibold text-slate-800 transition-colors"
               >

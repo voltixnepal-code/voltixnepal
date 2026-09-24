@@ -19,6 +19,7 @@ import {
   Zap,
   ExternalLink,
   X,
+  Video,
 } from 'lucide-react';
 import BrandLogo from '@/components/common/BrandLogo';
 
@@ -47,6 +48,7 @@ export default function AdminSidebar() {
     { label: 'Service Requests', href: '/admin/requests', icon: ClipboardList },
     { label: 'Customers', href: '/admin/customers', icon: Users },
     { label: 'Services CMS', href: '/admin/services', icon: Wrench },
+    { label: 'Work Gallery', href: '/admin/gallery', icon: Video },
     { label: 'Hero Slider', href: '/admin/hero', icon: SlidersHorizontal },
     { label: 'Media & Cloudinary', href: '/admin/media', icon: Layers },
     { label: 'Homepage Sections', href: '/admin/homepage', icon: Layers },

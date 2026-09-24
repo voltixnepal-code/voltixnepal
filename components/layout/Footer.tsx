@@ -110,6 +110,11 @@ export default function Footer({ settings }: FooterProps) {
                 </Link>
               </li>
               <li>
+                <Link href="/gallery" className="text-amber-400 font-semibold hover:text-amber-300 transition-colors block">
+                  Work Gallery & Videos
+                </Link>
+              </li>
+              <li>
                 <Link href="/about" className="hover:text-white hover:underline transition-colors block">
                   About Sanjit Mishra
                 </Link>

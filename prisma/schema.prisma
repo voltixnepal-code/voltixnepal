@@ -180,3 +180,21 @@ model AuditLog {
   details    String?
   createdAt  DateTime @default(now())
 }
+
+model GalleryItem {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  mediaType       String   @default("PHOTO") // "PHOTO" or "VIDEO"
+  storageProvider String   @default("CLOUDINARY") // "CLOUDINARY" or "CLOUDFLARE_R2"
+  mediaUrl        String
+  thumbnailUrl    String?
+  fileSizeBytes   Int?
+  category        String   @default("House Wiring") // "House Wiring", "Emergency Repair", "Inverter & Battery", "Distribution Board", "Lighting & Fixtures", "Earthing Pit", "Commercial"
+  location        String?  @default("Kathmandu")
+  dateTaken       DateTime @default(now())
+  isPublished     Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
