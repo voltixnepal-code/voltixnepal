@@ -101,15 +101,17 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 7. WEBSITE SETTINGS
+    // 8. WORK GALLERY (Photos & Videos)
     // ==========================================
-    match /websiteSettings/{settingId} {
-      allow read: if true;
+    match /galleryItems/{itemId} {
+      // Public can view published work items; Admins can view all items
+      allow read: if isAdmin() || resource.data.isPublished == true || !('isPublished' in resource.data);
+      // Only authenticated admins can add, edit, or delete work records
       allow write: if isAdmin();
     }
 
     // ==========================================
-    // 8. AUDIT LOGS & NOTIFICATIONS (Admin Private)
+    // 9. AUDIT LOGS & NOTIFICATIONS (Admin Private)
     // ==========================================
     match /auditLogs/{logId} {
       allow read, write: if isAdmin();

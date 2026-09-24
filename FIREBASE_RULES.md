@@ -1,6 +1,6 @@
-# VoltixNepal — Firebase Security Rules & Admin Export
+# VoltixNepal — Firebase Security Rules & Admin Configuration
 
-This document contains the complete Firebase Security Rules configured for the **Firebase Spark (Free) Plan** with strict Admin access granted **only** to:
+This document contains the complete Firebase Security Rules configured for **Cloud Firestore**, **Firebase Storage**, and **Realtime Database** with strict Admin access granted **only** to:
 1. `voltixnepal@gmail.com`
 2. `bishaldev949@gmail.com`
 
@@ -8,11 +8,12 @@ This document contains the complete Firebase Security Rules configured for the *
 
 ## 📁 Rule Files in Codebase
 
-| Database Service | File in Project | Purpose |
+| Service | File in Project | Purpose & Limits |
 |---|---|---|
-| **Cloud Firestore** | [`firestore.rules`](./firestore.rules) | Secures bookings, users, CMS content, and admin audit logs |
-| **Realtime Database** | [`database.rules.json`](./database.rules.json) | Secures realtime events, sync, and notifications |
-| **Firebase Project Config** | [`firebase.json`](./firebase.json) | CLI deployment configuration |
+| **Cloud Firestore** | [`firestore.rules`](./firestore.rules) | Secures bookings, gallery work items, CMS, and admin logs |
+| **Firebase Storage** | [`storage.rules`](./storage.rules) | Enforces **<100MB** limit for photos and **<500MB** limit for videos |
+| **Realtime Database** | [`database.rules.json`](./database.rules.json) | Realtime sync for gallery, requests, and notifications |
+| **Firebase Project Config** | [`firebase.json`](./firebase.json) | Multi-target deployment configuration |
 
 ---
 
@@ -75,7 +76,17 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 3. PUBLIC WEBSITE DATA (Public Read, Admin Write)
+    // 3. DAILY WORK GALLERY (Photos & Videos)
+    // ==========================================
+    match /galleryItems/{itemId} {
+      // Public can view published work items; Admins can view all items
+      allow read: if isAdmin() || resource.data.isPublished == true || !('isPublished' in resource.data);
+      // Only authenticated admins can add, edit, or delete work records
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // 4. PUBLIC WEBSITE CMS DATA
     // ==========================================
     match /services/{serviceId} {
       allow read: if true;
@@ -114,7 +125,7 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 4. PRIVATE ADMIN LOGS & NOTIFICATIONS
+    // 5. PRIVATE ADMIN LOGS & NOTIFICATIONS
     // ==========================================
     match /auditLogs/{logId} {
       allow read, write: if isAdmin();
@@ -134,7 +145,69 @@ service cloud.firestore {
 
 ---
 
-## 2. Firebase Realtime Database Rules (`database.rules.json`)
+## 2. Firebase Storage Rules (`storage.rules`)
+
+```javascript
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email.lower() == 'voltixnepal@gmail.com' ||
+        request.auth.token.email.lower() == 'bishaldev949@gmail.com' ||
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'ADMIN'
+      );
+    }
+
+    // 1. Public Assets & Logos
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && request.resource.size < 100 * 1024 * 1024;
+    }
+
+    // 2. Daily Work Photos (<100MB Limit)
+    match /gallery/photos/{photoId} {
+      allow read: if true;
+      allow write: if isAdmin() 
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.size < 100 * 1024 * 1024;
+    }
+
+    // 3. Daily Work Videos (<500MB Limit)
+    match /gallery/videos/{videoId} {
+      allow read: if true;
+      allow write: if isAdmin() 
+        && request.resource.contentType.matches('video/.*')
+        && request.resource.size < 500 * 1024 * 1024;
+    }
+
+    // 4. Customer Fault Attachments (<25MB)
+    match /serviceRequests/{requestId}/{fileName} {
+      allow create: if request.resource.size < 25 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow read: if true;
+      allow delete: if isAdmin();
+    }
+
+    // Catch-all
+    match /{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
+```
+
+---
+
+## 3. Firebase Realtime Database Rules (`database.rules.json`)
 
 ```json
 {
@@ -142,6 +215,10 @@ service cloud.firestore {
     ".read": false,
     ".write": false,
     "services": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
+    },
+    "galleryItems": {
       ".read": true,
       ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
     },
@@ -170,9 +247,14 @@ service cloud.firestore {
 
 ---
 
-## 3. How to Deploy via Firebase CLI
+## 4. How to Deploy via Firebase CLI
 
-If you have Firebase CLI installed on your computer:
+Run this single command from your project root:
 ```bash
-firebase deploy --only firestore:rules,database
+firebase deploy --only firestore:rules,storage,database
 ```
+
+Or copy and paste the rules directly into the **Firebase Console** under:
+- **Firestore Database** ➔ **Rules**
+- **Storage** ➔ **Rules**
+- **Realtime Database** ➔ **Rules**

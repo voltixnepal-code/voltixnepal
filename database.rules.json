@@ -14,6 +14,10 @@
       ".read": true,
       ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
     },
+    "galleryItems": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
+    },
     "serviceRequests": {
       ".read": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)",
       "$requestId": {
