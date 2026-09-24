@@ -58,10 +58,19 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /customers/{customerId} {
+      allow read, write: if isAdmin();
+    }
+
     // ==========================================
-    // 3. DAILY WORK GALLERY
+    // 3. DAILY WORK GALLERY (Photos & Videos)
     // ==========================================
     match /galleryItems/{itemId} {
+      allow read: if isAdmin() || resource.data.isPublished == true || !('isPublished' in resource.data);
+      allow write: if isAdmin();
+    }
+
+    match /gallery/{itemId} {
       allow read: if isAdmin() || resource.data.isPublished == true || !('isPublished' in resource.data);
       allow write: if isAdmin();
     }
@@ -98,6 +107,11 @@ service cloud.firestore {
       allow read: if true;
       allow create: if true;
       allow update, delete: if isAdmin();
+    }
+
+    match /contactMessages/{messageId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
     }
 
     match /websiteSettings/{settingId} {
@@ -142,11 +156,31 @@ Copy and paste this into **Firebase Console ➔ Realtime Database ➔ Rules**:
       ".read": true,
       ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
     },
+    "homepageSections": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
+    },
     "websiteSettings": {
       ".read": true,
       ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
     },
     "galleryItems": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
+    },
+    "gallery": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
+    },
+    "blogPosts": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
+    },
+    "faqs": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
+    },
+    "testimonials": {
       ".read": true,
       ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
     },
@@ -157,7 +191,17 @@ Copy and paste this into **Firebase Console ➔ Realtime Database ➔ Rules**:
         ".read": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || data.child('userId').val() === auth.uid)"
       }
     },
+    "contactMessages": {
+      ".read": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)",
+      "$messageId": {
+        ".write": "true"
+      }
+    },
     "notifications": {
+      ".read": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)",
+      ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
+    },
+    "auditLogs": {
       ".read": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)",
       ".write": "auth != null && (auth.token.email == 'voltixnepal@gmail.com' || auth.token.email == 'bishaldev949@gmail.com' || auth.token.admin === true)"
     }
