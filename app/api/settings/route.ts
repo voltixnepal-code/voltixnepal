@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest) {
 
     const body = await req.json();
 
-    const updated = await prisma.websiteSettings.upsert({
+    const updated = await (prisma as any).websiteSettings.upsert({
       where: { id: 'default_settings' },
       update: {
         businessName: body.businessName,
@@ -58,11 +58,23 @@ export async function PUT(req: NextRequest) {
         instagramUrl: body.instagramUrl,
         tiktokUrl: body.tiktokUrl,
         youtubeUrl: body.youtubeUrl,
-      },
+        aboutTitle: body.aboutTitle,
+        aboutSubtitle: body.aboutSubtitle,
+        aboutStory: body.aboutStory,
+        aboutMission: body.aboutMission,
+        aboutVision: body.aboutVision,
+        aboutOwnerTitle: body.aboutOwnerTitle,
+        aboutOwnerBio: body.aboutOwnerBio,
+        aboutOwnerPhoto: body.aboutOwnerPhoto,
+        aboutCoverPhoto: body.aboutCoverPhoto,
+        aboutExperienceYears: typeof body.aboutExperienceYears === 'number' ? body.aboutExperienceYears : (body.aboutExperienceYears ? parseInt(body.aboutExperienceYears, 10) : 10),
+        aboutProjectsDone: typeof body.aboutProjectsDone === 'number' ? body.aboutProjectsDone : (body.aboutProjectsDone ? parseInt(body.aboutProjectsDone, 10) : 1500),
+        aboutHappyClients: typeof body.aboutHappyClients === 'number' ? body.aboutHappyClients : (body.aboutHappyClients ? parseInt(body.aboutHappyClients, 10) : 1200),
+      } as any,
       create: {
         id: 'default_settings',
         ...body,
-      },
+      } as any,
     });
 
     // Audit log

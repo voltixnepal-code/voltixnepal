@@ -17,6 +17,18 @@ export const DEFAULT_SETTINGS = {
   instagramUrl: 'https://instagram.com/voltixnepal',
   tiktokUrl: 'https://tiktok.com/@voltixnepal',
   youtubeUrl: 'https://youtube.com',
+  aboutTitle: 'Reliable Electrical Workmanship with Safety at the Core',
+  aboutSubtitle: 'Standardized safety, transparent diagnostics, and punctual technician dispatch across Kathmandu Valley.',
+  aboutStory: 'VoltixNepal was founded by Sanjit Mishra to address a persistent issue in Kathmandu Valley electrical contracting: the lack of standardized safety, transparent diagnostics, and punctual technician dispatch.',
+  aboutMission: 'Protecting lives, eliminating electrical fire hazards, and ensuring electrical installations function safely without voltage fluctuations or insulation failure.',
+  aboutVision: "To be Nepal's most trusted and technologically advanced electrical contracting and safety engineering team.",
+  aboutOwnerTitle: 'Lead Electrician & Proprietor',
+  aboutOwnerBio: 'Certified lead electrician with over 10 years of extensive experience delivering residential wiring, commercial automation, and rapid emergency troubleshooting.',
+  aboutOwnerPhoto: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80',
+  aboutCoverPhoto: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=1200&q=80',
+  aboutExperienceYears: 10,
+  aboutProjectsDone: 1500,
+  aboutHappyClients: 1200,
 };
 
 export const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
