@@ -203,7 +203,7 @@ export default function ServiceRequestForm({
           Book an Electrician
         </h2>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Fill out your requirement and location. Request is dispatched directly to Sanjeet Mishra.
+          Fill out your requirement and location. Request is dispatched directly to Sanjit Mishra.
         </p>
       </div>
 

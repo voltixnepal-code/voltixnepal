@@ -16,7 +16,7 @@ import { DEFAULT_SETTINGS } from '@/lib/constants';
 export const metadata: Metadata = {
   title: 'Contact VoltixNepal | Electrical Contractor',
   description:
-    'Contact electrician Sanjeet Mishra for service appointments, 24/7 breakdown assistance, and house wiring quotes in Kathmandu.',
+    'Contact electrician Sanjit Mishra for service appointments, 24/7 breakdown assistance, and house wiring quotes in Kathmandu.',
 };
 
 export const revalidate = 0;
@@ -34,7 +34,7 @@ export default async function ContactPage() {
   }
 
   const businessName = settings?.businessName || 'VoltixNepal';
-  const ownerName = settings?.ownerName || 'Sanjeet Mishra';
+  const ownerName = settings?.ownerName || 'Sanjit Mishra';
   const phone = settings?.phone || '+977 9825870047';
   const whatsappNumber = settings?.whatsappNumber || '9779825870047';
   const email = settings?.email || 'voltixnepal@gmail.com';
@@ -48,7 +48,7 @@ export default async function ContactPage() {
       <div className="w-full px-4 sm:px-6 lg:px-10">
         <div className="max-w-3xl mb-12">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Contact VoltixNepal & Sanjeet Mishra
+            Contact VoltixNepal & Sanjit Mishra
           </h1>
           <p className="text-sm sm:text-base text-slate-600 mt-2">
             Get in touch for electrical repairs, house wiring quotes, or 24/7 emergency power breakdown assistance across Kathmandu Valley.
@@ -64,7 +64,7 @@ export default async function ContactPage() {
                   Business & Contractor Info
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Direct contact details for Sanjeet Mishra.
+                  Direct contact details for Sanjit Mishra.
                 </p>
               </div>
 
@@ -177,7 +177,7 @@ export default async function ContactPage() {
                     <span>Direct Dispatch</span>
                   </div>
                   <p className="text-xs text-slate-600">
-                    No middlemen or agency markups. Direct contact with Sanjeet Mishra.
+                    No middlemen or agency markups. Direct contact with Sanjit Mishra.
                   </p>
                 </div>
 

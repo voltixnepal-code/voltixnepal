@@ -17,7 +17,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="prose prose-slate text-xs sm:text-sm leading-relaxed space-y-4 text-slate-700">
           <p>
-            At <strong>VoltixNepal</strong> (operated by Sanjeet Mishra), we respect your privacy. This policy explains how we collect and use your information when you request electrical services on our website.
+            At <strong>VoltixNepal</strong> (operated by Sanjit Mishra), we respect your privacy. This policy explains how we collect and use your information when you request electrical services on our website.
           </p>
 
           <h2 className="text-base font-bold text-slate-900 pt-2">

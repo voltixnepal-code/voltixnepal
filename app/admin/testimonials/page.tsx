@@ -11,7 +11,9 @@ import {
   Loader2,
   Star,
   CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 export default function AdminTestimonialsPage() {
   const [testimonials, setTestimonials] = useState<any[]>([]);
@@ -19,6 +21,7 @@ export default function AdminTestimonialsPage() {
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchTestimonials = async () => {
     setLoading(true);
@@ -40,11 +43,13 @@ export default function AdminTestimonialsPage() {
   }, []);
 
   const handleOpenEdit = (item: any) => {
+    setErrorMessage(null);
     setEditingItem({ ...item });
     setIsNew(false);
   };
 
   const handleOpenNew = () => {
+    setErrorMessage(null);
     setEditingItem({
       customerName: '',
       location: 'Kathmandu',
@@ -62,28 +67,31 @@ export default function AdminTestimonialsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setErrorMessage(null);
+
     try {
       const url = isNew
         ? '/api/testimonials'
         : `/api/testimonials/${editingItem.id}`;
       const method = isNew ? 'POST' : 'PUT';
 
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...editingItem,
           rating: Number(editingItem.rating),
         }),
       });
 
-      const data = await res.json();
-      if (data.success) {
+      if (res.ok && res.data?.success) {
         setEditingItem(null);
+        setErrorMessage(null);
         fetchTestimonials();
+      } else {
+        setErrorMessage(res.error || 'Failed to save testimonial.');
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An unexpected error occurred while saving.');
     } finally {
       setSaving(false);
     }
@@ -92,8 +100,12 @@ export default function AdminTestimonialsPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this testimonial?')) return;
     try {
-      const res = await fetch(`/api/testimonials/${id}`, { method: 'DELETE' });
-      if (res.ok) fetchTestimonials();
+      const res = await adminFetch(`/api/testimonials/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchTestimonials();
+      } else {
+        alert(res.error || 'Failed to delete testimonial.');
+      }
     } catch (err) {
       console.error(err);
     }
@@ -178,8 +190,13 @@ export default function AdminTestimonialsPage() {
 
       {/* Modal */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs p-3 sm:p-6 flex min-h-full items-start justify-center pt-16 sm:pt-20 pb-16">
-          <div className="bg-white rounded-xl border border-neutral-200 max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 my-auto relative">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingItem(null);
+          }}
+          className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 flex min-h-full items-start justify-center pt-16 sm:pt-20 pb-16"
+        >
+          <div className="bg-white rounded-xl border border-slate-300 ring-1 ring-black/10 max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 my-auto relative">
             <div className="sticky top-0 bg-white z-10 flex items-center justify-between border-b border-slate-100 pb-3 -mt-1 pt-1">
               <h2 className="text-base font-bold text-slate-900 truncate pr-2">
                 {isNew ? 'New Testimonial' : 'Edit Testimonial'}
@@ -192,6 +209,13 @@ export default function AdminTestimonialsPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {errorMessage && (
+              <div className="p-3 rounded-md bg-red-50 border border-red-200 flex items-center gap-2 text-xs font-semibold text-red-800">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div className="grid grid-cols-2 gap-4">

@@ -14,9 +14,9 @@ import { Metadata } from 'next';
 import { DEFAULT_SETTINGS } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: 'About Sanjeet Mishra & VoltixNepal',
+  title: 'About Sanjit Mishra & VoltixNepal',
   description:
-    'Learn about Sanjeet Mishra, electrical service contractor in Kathmandu, safety standards, and commercial services.',
+    'Learn about Sanjit Mishra, electrical service contractor in Kathmandu, safety standards, and commercial services.',
 };
 
 export const revalidate = 0;
@@ -33,7 +33,7 @@ export default async function AboutPage() {
     console.warn('Using default settings in About page:', err);
   }
 
-  const ownerName = settings?.ownerName || 'Sanjeet Mishra';
+  const ownerName = settings?.ownerName || 'Sanjit Mishra';
   const businessPhone = settings?.phone || '+977 9825870047';
 
   return (
@@ -70,7 +70,7 @@ export default async function AboutPage() {
             <div className="relative rounded-lg overflow-hidden border border-slate-200 shadow-md bg-slate-100">
               <Image
                 src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80"
-                alt="Sanjeet Mishra Electrician"
+                alt="Sanjit Mishra Electrician"
                 width={800}
                 height={600}
                 className="object-cover w-full h-[400px]"

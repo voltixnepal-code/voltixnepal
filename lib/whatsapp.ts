@@ -45,7 +45,7 @@ export function generateWhatsAppMessage(data: WhatsAppPayloadParams): string {
     mapLink !== 'Not provided' ? `*Google Maps:* ${mapLink}` : null,
     data.additionalNotes ? `*Additional Notes:* ${data.additionalNotes}` : null,
     `--------------------------------`,
-    `*VoltixNepal - Sanjeet Mishra (Electrician)*`,
+    `*VoltixNepal - Sanjit Mishra (Electrician)*`,
   ].filter(Boolean);
 
   return lines.join('\n');

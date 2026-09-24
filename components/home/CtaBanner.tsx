@@ -20,7 +20,7 @@ export default function CtaBanner({
               Need Reliable Electrical Work Done Today?
             </h2>
             <p className="text-xs sm:text-sm text-red-100 max-w-xl">
-              From minor socket repairs to full house conduit wiring and emergency power restorations. Contact Sanjeet Mishra at VoltixNepal for quality service.
+              From minor socket repairs to full house conduit wiring and emergency power restorations. Contact Sanjit Mishra at VoltixNepal for quality service.
             </p>
           </div>
 

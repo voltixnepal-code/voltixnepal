@@ -34,18 +34,18 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${businessName}`,
     },
     description:
-      'Professional electrical services in Kathmandu, Lalitpur, and Bhaktapur by electrician Sanjeet Mishra. House wiring, 24/7 emergency repair, MCB troubleshooting, inverter installation.',
+      'Professional electrical services in Kathmandu, Lalitpur, and Bhaktapur by electrician Sanjit Mishra. House wiring, 24/7 emergency repair, MCB troubleshooting, inverter installation.',
     keywords: [
       'electrician kathmandu',
       'electrical repair nepal',
       'house wiring kathmandu',
-      'sanjeet mishra electrician',
+      'sanjit mishra electrician',
       'voltix nepal',
       'inverter installation nepal',
       'emergency electrician lalitpur',
     ],
-    authors: [{ name: 'Sanjeet Mishra', url: 'https://voltixnepal.com' }],
-    creator: 'Sanjeet Mishra',
+    authors: [{ name: 'Sanjit Mishra', url: 'https://voltixnepal.com' }],
+    creator: 'Sanjit Mishra',
     metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com'),
     openGraph: {
       type: 'website',
@@ -82,7 +82,7 @@ export async function generateMetadata(): Promise<Metadata> {
         { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
       ],
       apple: [
-        { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+        { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
         { url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
       ],
       shortcut: ['/icon.svg'],
@@ -126,9 +126,12 @@ export default async function RootLayout({
     <html lang="en" className="scroll-smooth">
       <head>
         <meta name="google-site-verification" content="gWRSvZzPkeD0m5lU2iIFwbguSiEVGyRd_GO2kXzrAWA" />
-        <link rel="icon" href="/favicon.ico" sizes="32x32" />
+        {/* SVG Favicon */}
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/icon.svg" />
+        <link rel="shortcut icon" href="/icon.svg" type="image/svg+xml" />
+        {/* iOS Apple Touch Icon (PNG strictly required by iOS) */}
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

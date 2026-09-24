@@ -153,7 +153,7 @@ export default function AdminHeader() {
           </div>
           <div className="hidden sm:block text-left">
             <div className="text-xs font-bold text-slate-900 leading-tight">
-              Sanjeet Mishra
+              Sanjit Mishra
             </div>
             <div className="text-[10px] text-slate-500 font-medium leading-tight">
               Administrator

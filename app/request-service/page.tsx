@@ -79,7 +79,7 @@ export default async function RequestServicePage({
                 <div className="flex items-start gap-2.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-red-600 mt-1.5 shrink-0" />
                   <p>
-                    <strong className="text-slate-900">Direct Technician Dispatch:</strong> Request is received directly by Sanjeet Mishra without call-center delays.
+                    <strong className="text-slate-900">Direct Technician Dispatch:</strong> Request is received directly by Sanjit Mishra without call-center delays.
                   </p>
                 </div>
                 <div className="flex items-start gap-2.5">

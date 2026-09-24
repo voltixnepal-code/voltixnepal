@@ -63,7 +63,7 @@ export default async function BlogPage({
             Safety Guides & Electrical Tips
           </h1>
           <p className="text-sm sm:text-base text-slate-600 mt-2">
-            Practical advice written by Sanjeet Mishra to help you maintain safe wiring and make informed decisions on home power systems.
+            Practical advice written by Sanjit Mishra to help you maintain safe wiring and make informed decisions on home power systems.
           </p>
         </div>
 

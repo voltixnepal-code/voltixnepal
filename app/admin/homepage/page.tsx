@@ -10,13 +10,16 @@ import {
   Save,
   Loader2,
   CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 export default function AdminHomepageBuilder() {
   const [sections, setSections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchSections = async () => {
     setLoading(true);
@@ -63,19 +66,20 @@ export default function AdminHomepageBuilder() {
   const handleSave = async () => {
     setSaving(true);
     setSavedMessage(false);
+    setErrorMessage(null);
     try {
-      const res = await fetch('/api/homepage-sections', {
+      const res = await adminFetch('/api/homepage-sections', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sections }),
       });
-      const data = await res.json();
-      if (data.success) {
+      if (res.ok && res.data?.success) {
         setSavedMessage(true);
         setTimeout(() => setSavedMessage(false), 3000);
+      } else {
+        setErrorMessage(res.error || 'Failed to update homepage layout.');
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An unexpected error occurred while saving.');
     } finally {
       setSaving(false);
     }
@@ -111,6 +115,13 @@ export default function AdminHomepageBuilder() {
         <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 flex items-center gap-2 text-xs font-semibold text-emerald-800">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           <span>Homepage layout updated successfully!</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="p-3.5 rounded-md bg-red-50 border border-red-200 flex items-center gap-2 text-xs font-semibold text-red-800">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{errorMessage}</span>
         </div>
       )}
 

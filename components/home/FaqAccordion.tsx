@@ -87,7 +87,7 @@ export default function FaqAccordion({ faqs }: FaqAccordionProps) {
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-500 mb-2">Have a specific electrical question?</p>
           <Link href="/contact" className="text-xs font-bold text-red-600 hover:text-red-700 underline">
-            Contact Sanjeet Mishra directly ↗
+            Contact Sanjit Mishra directly ↗
           </Link>
         </div>
       </div>

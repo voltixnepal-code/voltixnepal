@@ -6,6 +6,7 @@ import {
   Save,
   Loader2,
   CheckCircle2,
+  AlertCircle,
   Phone,
   MessageSquare,
   Mail,
@@ -13,15 +14,16 @@ import {
   Clock,
   Globe,
 } from 'lucide-react';
+import { adminFetch } from '@/lib/admin-fetch';
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<any>({
     businessName: 'VoltixNepal',
-    ownerName: 'Sanjeet Mishra',
+    ownerName: 'Sanjit Mishra',
     tagline: 'Professional Electrical Services in Nepal',
     phone: '+977 9800000000',
     whatsappNumber: '9779800000000',
-    email: 'sanjeet@voltixnepal.com',
+    email: 'sanjit@voltixnepal.com',
     address: 'Kathmandu, Bagmati Province, Nepal',
     businessHours:
       'Sunday - Friday: 7:00 AM - 8:00 PM | Saturday: Emergency Only',
@@ -29,7 +31,7 @@ export default function AdminSettingsPage() {
     emergencyPhone: '+977 9800000000',
     googleMapsUrl: 'https://maps.google.com/?q=Kathmandu,Nepal',
     footerText:
-      'Professional electrical installation, emergency repair, and maintenance services across Kathmandu Valley. Safety, punctuality, and quality guaranteed by Sanjeet Mishra.',
+      'Professional electrical installation, emergency repair, and maintenance services across Kathmandu Valley. Safety, punctuality, and quality guaranteed by Sanjit Mishra.',
     announcementText:
       '24/7 Emergency Electrical Breakdown Service Active in Kathmandu Valley',
     announcementActive: true,
@@ -42,6 +44,7 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -59,21 +62,22 @@ export default function AdminSettingsPage() {
     e.preventDefault();
     setSaving(true);
     setSavedMessage(false);
+    setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/settings', {
+      const res = await adminFetch('/api/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       });
 
-      const data = await res.json();
-      if (data.success) {
+      if (res.ok && res.data?.success) {
         setSavedMessage(true);
         setTimeout(() => setSavedMessage(false), 3500);
+      } else {
+        setErrorMessage(res.error || 'Failed to update settings. Please verify you are logged in.');
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An unexpected error occurred while saving.');
     } finally {
       setSaving(false);
     }
@@ -117,6 +121,13 @@ export default function AdminSettingsPage() {
         <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 flex items-center gap-2 text-xs font-semibold text-emerald-800">
           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
           <span>Business settings updated successfully!</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="p-3.5 rounded-md bg-red-50 border border-red-200 flex items-center gap-2 text-xs font-semibold text-red-800">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{errorMessage}</span>
         </div>
       )}
 
@@ -227,7 +238,7 @@ export default function AdminSettingsPage() {
                   onChange={(e) =>
                     setSettings({ ...settings, email: e.target.value })
                   }
-                  placeholder="sanjeet@voltixnepal.com"
+                  placeholder="sanjit@voltixnepal.com"
                   className="form-input text-xs pl-9"
                 />
               </div>

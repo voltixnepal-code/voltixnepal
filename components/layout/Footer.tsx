@@ -33,14 +33,14 @@ interface FooterProps {
 export default function Footer({ settings }: FooterProps) {
   const currentYear = new Date().getFullYear();
   const businessName = settings?.businessName || 'VoltixNepal';
-  const ownerName = settings?.ownerName || 'Sanjeet Mishra';
+  const ownerName = settings?.ownerName || 'Sanjit Mishra';
   const phone = settings?.phone || '+977 9825870047';
-  const email = settings?.email || 'sanjeet@voltixnepal.com';
+  const email = settings?.email || 'sanjit@voltixnepal.com';
   const address = settings?.address || 'Kathmandu, Bagmati Province, Nepal';
   const hours = settings?.businessHours || 'Sun - Fri: 7:00 AM - 8:00 PM | Sat: Emergency Only';
   const footerText =
     settings?.footerText ||
-    'Professional electrical installation, emergency repair, and maintenance services across Kathmandu Valley. Certified safety standards and punctuality guaranteed by Sanjeet Mishra.';
+    'Professional electrical installation, emergency repair, and maintenance services across Kathmandu Valley. Certified safety standards and punctuality guaranteed by Sanjit Mishra.';
 
   return (
     <footer className="bg-black text-neutral-200 border-t border-neutral-800 w-full">
@@ -111,7 +111,7 @@ export default function Footer({ settings }: FooterProps) {
               </li>
               <li>
                 <Link href="/about" className="hover:text-white hover:underline transition-colors block">
-                  About Sanjeet Mishra
+                  About Sanjit Mishra
                 </Link>
               </li>
               <li>

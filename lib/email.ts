@@ -231,7 +231,7 @@ export async function sendAdminNewRequestNotification(
           <tr>
             <td style="padding: 20px 30px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; line-height: 1.6; text-align: center;">
               <div style="font-weight: 600; color: #475569;">
-                VoltixNepal Electrical Services • Sanjeet Mishra
+                VoltixNepal Electrical Services • Sanjit Mishra
               </div>
               <div>Kathmandu Valley, Bagmati Province, Nepal • Phone: +977 9825870047</div>
               <div style="margin-top: 4px; color: #94a3b8;">
@@ -305,7 +305,7 @@ export async function sendCustomerConfirmationEmail(
                       Voltix<span style="color: #dc2626;">Nepal</span>
                     </div>
                     <div style="font-size: 12px; font-weight: 500; color: #64748b; margin-top: 4px;">
-                      Professional Electrical Services • Sanjeet Mishra
+                      Professional Electrical Services • Sanjit Mishra
                     </div>
                   </td>
                   <td align="right">
@@ -372,7 +372,7 @@ export async function sendCustomerConfirmationEmail(
                   What happens next?
                 </div>
                 <div style="font-size: 13px; color: #713f12; line-height: 1.5;">
-                  Our licensed electrician <strong>Sanjeet Mishra</strong> will contact you via <strong>${payload.preferredContact}</strong> at <strong>${payload.customerPhone}</strong> to confirm the appointment and provide safety guidance.
+                  Our licensed electrician <strong>Sanjit Mishra</strong> will contact you via <strong>${payload.preferredContact}</strong> at <strong>${payload.customerPhone}</strong> to confirm the appointment and provide safety guidance.
                 </div>
               </div>
             </td>

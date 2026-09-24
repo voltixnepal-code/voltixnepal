@@ -150,7 +150,7 @@ export default function NotFound() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors"
             >
               <Phone className="w-3.5 h-3.5" />
-              <span>Call Sanjeet</span>
+              <span>Call Sanjit</span>
             </a>
             <a
               href="https://wa.me/9779825870047?text=Hello%20VoltixNepal,%20I%20need%20electrical%20assistance."

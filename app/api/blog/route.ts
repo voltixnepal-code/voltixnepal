@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
           'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80',
         category: body.category || 'Electrical Safety',
         tags: body.tags || 'electrical,nepal',
-        author: body.author || 'Sanjeet Mishra',
+        author: body.author || 'Sanjit Mishra',
         seoTitle: body.seoTitle || body.title,
         metaDescription: body.metaDescription || body.summary,
         isPublished: body.isPublished ?? true,

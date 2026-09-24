@@ -22,8 +22,13 @@ export default function BookingSuccessModal({
   onClose,
 }: BookingSuccessModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg border border-slate-200 max-w-lg w-full p-6 shadow-xl space-y-5 animate-in fade-in zoom-in duration-200">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+    >
+      <div className="bg-white rounded-xl border border-slate-300 ring-1 ring-black/10 max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-200">
         <div className="text-center space-y-2">
           <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-7 h-7" />
@@ -59,7 +64,7 @@ export default function BookingSuccessModal({
         </div>
 
         <p className="text-xs text-slate-600 leading-relaxed text-center">
-          Sanjeet Mishra will review your details and contact you shortly to confirm the technician visit.
+          Sanjit Mishra will review your details and contact you shortly to confirm the technician visit.
         </p>
 
         {/* Actions */}
@@ -81,7 +86,7 @@ export default function BookingSuccessModal({
               className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs border border-slate-200 transition-colors"
             >
               <Phone className="w-3.5 h-3.5 text-red-600" />
-              <span>Call Sanjeet</span>
+              <span>Call Sanjit</span>
             </a>
 
             <button

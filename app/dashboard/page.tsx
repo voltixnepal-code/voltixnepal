@@ -119,7 +119,7 @@ export default function CustomerDashboardPage() {
                 Your Service Requests
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Track appointments and status updates from Sanjeet Mishra
+                Track appointments and status updates from Sanjit Mishra
               </p>
             </div>
             <span className="text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded border border-red-200">

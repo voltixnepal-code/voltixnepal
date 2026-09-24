@@ -139,7 +139,7 @@ export default async function ServicesPage() {
               Submit Custom Request
             </Link>
             <Link href="/contact" className="btn-secondary text-xs font-bold">
-              Contact Sanjeet
+              Contact Sanjit
             </Link>
           </div>
         </div>

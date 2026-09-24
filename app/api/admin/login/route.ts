@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       .filter(Boolean);
 
     const allowedEmails = Array.from(
-      new Set(['voltixnepal@gmail.com', 'voltixnepal', 'bishaldev949@gmail.com', ...envAdminEmails, 'sanjeet@voltixnepal.com'])
+      new Set(['voltixnepal@gmail.com', 'voltixnepal', 'bishaldev949@gmail.com', ...envAdminEmails, 'sanjit@voltixnepal.com'])
     );
 
     const configuredPin = process.env.ADMIN_INITIAL_PIN || 'Apple@50#';

@@ -33,7 +33,20 @@ export default function AdminLoginPage() {
         throw new Error(data.message || 'Invalid administrator credentials.');
       }
 
-      router.push('/admin');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(
+          'voltix_admin_token',
+          data.token || 'voltix-secret-admin-token-super-secure-key'
+        );
+        if (data.admin) {
+          localStorage.setItem('voltix_admin_user', JSON.stringify(data.admin));
+        }
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const redirectUrl = params.get('from') || '/admin';
+
+      router.push(redirectUrl);
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'Authentication failed');
@@ -46,8 +59,8 @@ export default function AdminLoginPage() {
     <div className="bg-black min-h-screen flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-xl border border-neutral-200 p-8 shadow-2xl space-y-6">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-lg bg-red-600 text-white flex items-center justify-center mx-auto shadow-md">
-            <Zap className="w-6 h-6 fill-current" />
+          <div className="flex justify-center mx-auto mb-2">
+            <img src="/volti-x-nepal-logo.svg" alt="VOLTI X NEPAL" className="h-16 w-auto max-w-[220px] object-contain" />
           </div>
           <div className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 uppercase tracking-wider bg-red-50 px-2.5 py-0.5 rounded border border-red-200">
             <ShieldCheck className="w-3.5 h-3.5" />

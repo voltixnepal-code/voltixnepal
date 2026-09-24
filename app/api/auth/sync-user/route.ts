@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { firebaseUid, name, email, phone } = syncSchema.parse(body);
 
-    const configuredAdmin = process.env.ADMIN_EMAIL || 'sanjeet@voltixnepal.com';
+    const configuredAdmin = process.env.ADMIN_EMAIL || 'sanjit@voltixnepal.com';
     const isAdmin = email.toLowerCase() === configuredAdmin.toLowerCase();
 
     const user = await prisma.user.upsert({

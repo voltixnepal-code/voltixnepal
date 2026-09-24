@@ -12,8 +12,10 @@ import {
   RefreshCw,
   Eye,
   EyeOff,
+  AlertCircle,
 } from 'lucide-react';
 import CloudinaryUploader from '@/components/common/CloudinaryUploader';
+import { adminFetch } from '@/lib/admin-fetch';
 
 export default function AdminServicesPage() {
   const [services, setServices] = useState<any[]>([]);
@@ -21,6 +23,7 @@ export default function AdminServicesPage() {
   const [editingService, setEditingService] = useState<any | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchServices = async () => {
     setLoading(true);
@@ -42,6 +45,7 @@ export default function AdminServicesPage() {
   }, []);
 
   const handleOpenEdit = (service: any) => {
+    setErrorMessage(null);
     setEditingService({
       ...service,
       benefitsArray: JSON.parse(service.benefits || '[]').join('\n'),
@@ -52,6 +56,7 @@ export default function AdminServicesPage() {
   };
 
   const handleOpenNew = () => {
+    setErrorMessage(null);
     setEditingService({
       title: '',
       slug: '',
@@ -75,6 +80,7 @@ export default function AdminServicesPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setErrorMessage(null);
 
     try {
       const payload = {
@@ -108,19 +114,20 @@ export default function AdminServicesPage() {
         : `/api/services/${editingService.id}`;
       const method = isNew ? 'POST' : 'PUT';
 
-      const res = await fetch(url, {
+      const res = await adminFetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-      if (data.success) {
+      if (res.ok && res.data?.success) {
         setEditingService(null);
+        setErrorMessage(null);
         fetchServices();
+      } else {
+        setErrorMessage(res.error || 'Failed to save service. Please check your credentials.');
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An unexpected error occurred while saving.');
     } finally {
       setSaving(false);
     }
@@ -129,8 +136,12 @@ export default function AdminServicesPage() {
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Are you sure you want to delete "${title}"?`)) return;
     try {
-      const res = await fetch(`/api/services/${id}`, { method: 'DELETE' });
-      if (res.ok) fetchServices();
+      const res = await adminFetch(`/api/services/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchServices();
+      } else {
+        alert(res.error || 'Failed to delete service.');
+      }
     } catch (err) {
       console.error(err);
     }
@@ -231,8 +242,13 @@ export default function AdminServicesPage() {
 
       {/* Edit / New Modal */}
       {editingService && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-xs p-3 sm:p-6 flex min-h-full items-start justify-center pt-16 sm:pt-20 pb-16">
-          <div className="bg-white rounded-xl border border-neutral-200 max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-auto relative">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingService(null);
+          }}
+          className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 flex min-h-full items-start justify-center pt-16 sm:pt-20 pb-16"
+        >
+          <div className="bg-white rounded-xl border border-slate-300 ring-1 ring-black/10 max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-auto relative">
             <div className="sticky top-0 bg-white z-10 flex items-center justify-between border-b border-slate-100 pb-3 -mt-1 pt-1">
               <h2 className="text-base font-bold text-slate-900 truncate pr-2">
                 {isNew ? 'Create New Service' : `Edit Service: ${editingService.title}`}
@@ -245,6 +261,13 @@ export default function AdminServicesPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {errorMessage && (
+              <div className="p-3 rounded-md bg-red-50 border border-red-200 flex items-center gap-2 text-xs font-semibold text-red-800">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSave} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

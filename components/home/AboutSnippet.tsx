@@ -12,7 +12,7 @@ interface AboutSnippetProps {
 }
 
 export default function AboutSnippet({ settings }: AboutSnippetProps) {
-  const ownerName = settings?.ownerName || 'Sanjeet Mishra';
+  const ownerName = settings?.ownerName || 'Sanjit Mishra';
   const phone = settings?.phone || '+977 9800000000';
 
   return (
@@ -24,7 +24,7 @@ export default function AboutSnippet({ settings }: AboutSnippetProps) {
             <div className="relative rounded-lg overflow-hidden border border-slate-200 shadow-md bg-white">
               <Image
                 src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1000&q=80"
-                alt="Sanjeet Mishra - Electrical Contractor"
+                alt="Sanjit Mishra - Electrical Contractor"
                 width={800}
                 height={600}
                 className="object-cover w-full h-[380px]"
@@ -79,7 +79,7 @@ export default function AboutSnippet({ settings }: AboutSnippetProps) {
             {/* Action buttons */}
             <div className="flex flex-wrap items-center gap-3 pt-3">
               <Link href="/request-service" className="btn-primary text-xs font-bold">
-                Book a Service with Sanjeet
+                Book a Service with Sanjit
               </Link>
               <a
                 href={`tel:${phone.replace(/\s+/g, '')}`}

@@ -1,6 +1,6 @@
 # VoltixNepal — Professional Electrical Services Web Platform
 
-A production-ready full-stack business web platform built for **VoltixNepal** (Owner: **Sanjeet Mishra**, Domain: `voltixnepal.com`). Designed specifically as an authentic, professional trade and electrical contracting platform with dual-channel order dispatch (WhatsApp + SMTP email), browser geolocation with automatic Google Maps link generation, customer portal, and a complete Admin Content Management System (CMS).
+A production-ready full-stack business web platform built for **VoltixNepal** (Owner: **Sanjit Mishra**, Domain: `voltixnepal.com`). Designed specifically as an authentic, professional trade and electrical contracting platform with dual-channel order dispatch (WhatsApp + SMTP email), browser geolocation with automatic Google Maps link generation, customer portal, and a complete Admin Content Management System (CMS).
 
 ---
 
@@ -55,7 +55,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the public website.
 ## 🔑 Admin Access & Initial Credentials
 
 - **Admin Login Route**: `/admin/login`
-- **Default Admin Email**: `sanjeet@voltixnepal.com`
+- **Default Admin Email**: `sanjit@voltixnepal.com`
 - **Default Admin PIN / Password**: `Voltix2026Admin!`
 
 Once logged in, you have complete control over:
@@ -81,7 +81,7 @@ DATABASE_URL="file:./dev.db"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
 # Admin Secret & Initial Credentials
-ADMIN_EMAIL="sanjeet@voltixnepal.com"
+ADMIN_EMAIL="sanjit@voltixnepal.com"
 ADMIN_INITIAL_PIN="Voltix2026Admin!"
 ADMIN_SECRET_KEY="voltix-secret-admin-token-super-secure-key"
 

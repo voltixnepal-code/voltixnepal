@@ -59,6 +59,10 @@ export default function AdminSidebar() {
 
   const handleLogout = async () => {
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('voltix_admin_token');
+        localStorage.removeItem('voltix_admin_user');
+      }
       await fetch('/api/admin/logout', { method: 'POST' });
       router.push('/admin/login');
       router.refresh();
@@ -143,7 +147,7 @@ export default function AdminSidebar() {
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-xs"
+            className="fixed inset-0 bg-black/30"
             onClick={onCloseMobile}
           />
           <div className="relative w-64 max-w-xs h-full bg-black z-10 shadow-2xl border-r border-neutral-900">

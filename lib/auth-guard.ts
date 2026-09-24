@@ -20,7 +20,7 @@ export async function verifyAdminRequest(req: NextRequest): Promise<AdminAuthRes
     .filter(Boolean);
 
   const allowedAdmins = Array.from(
-    new Set([...AUTHORIZED_ADMIN_EMAILS, ...envAdminEmails, 'sanjeet@voltixnepal.com'])
+    new Set([...AUTHORIZED_ADMIN_EMAILS, ...envAdminEmails, 'sanjit@voltixnepal.com'])
   );
 
   // 1. Check for Admin Session Cookie

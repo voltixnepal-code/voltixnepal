@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
 import { generateWhatsAppUrl } from '@/lib/whatsapp';
+import { adminFetch } from '@/lib/admin-fetch';
 
 export default function AdminRequestDetailPage({
   params,
@@ -31,7 +32,7 @@ export default function AdminRequestDetailPage({
   const [request, setRequest] = useState<any>(null);
   const [status, setStatus] = useState('NEW');
   const [internalNotes, setInternalNotes] = useState('');
-  const [adminAssigned, setAdminAssigned] = useState('Sanjeet Mishra');
+  const [adminAssigned, setAdminAssigned] = useState('Sanjit Mishra');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -40,13 +41,12 @@ export default function AdminRequestDetailPage({
   const fetchRequest = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/requests/${params.id}`);
-      const data = await res.json();
-      if (data.success && data.request) {
-        setRequest(data.request);
-        setStatus(data.request.status);
-        setInternalNotes(data.request.internalNotes || '');
-        setAdminAssigned(data.request.adminAssigned || 'Sanjeet Mishra');
+      const res = await adminFetch(`/api/requests/${params.id}`);
+      if (res.ok && res.data?.success && res.data?.request) {
+        setRequest(res.data.request);
+        setStatus(res.data.request.status);
+        setInternalNotes(res.data.request.internalNotes || '');
+        setAdminAssigned(res.data.request.adminAssigned || 'Sanjit Mishra');
       }
     } catch (err) {
       console.error(err);
@@ -63,9 +63,8 @@ export default function AdminRequestDetailPage({
     setSaving(true);
     setStatusMsg(null);
     try {
-      const res = await fetch(`/api/requests/${params.id}`, {
+      const res = await adminFetch(`/api/requests/${params.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status,
           internalNotes,
@@ -73,12 +72,11 @@ export default function AdminRequestDetailPage({
         }),
       });
 
-      const data = await res.json();
-      if (data.success) {
-        setRequest(data.request);
+      if (res.ok && res.data?.success) {
+        setRequest(res.data.request);
         setStatusMsg('Request updated successfully.');
       } else {
-        throw new Error(data.message || 'Failed to update');
+        throw new Error(res.error || 'Failed to update request.');
       }
     } catch (err: any) {
       setStatusMsg(`Error: ${err.message}`);
@@ -90,12 +88,13 @@ export default function AdminRequestDetailPage({
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this service request?')) return;
     try {
-      const res = await fetch(`/api/requests/${params.id}`, {
+      const res = await adminFetch(`/api/requests/${params.id}`, {
         method: 'DELETE',
       });
-      const data = await res.json();
-      if (data.success) {
+      if (res.ok && res.data?.success) {
         router.push('/admin/requests');
+      } else {
+        alert(res.error || 'Failed to delete request.');
       }
     } catch (err) {
       console.error(err);
@@ -139,7 +138,7 @@ export default function AdminRequestDetailPage({
   // Direct WhatsApp link to the customer
   const customerWhatsAppNumber = request.customerPhone.replace(/[^0-9]/g, '');
   const customerWhatsAppLink = `https://wa.me/${customerWhatsAppNumber}?text=${encodeURIComponent(
-    `Hello ${request.customerName}, this is Sanjeet Mishra from VoltixNepal regarding your electrical service request #${request.requestId}.`
+    `Hello ${request.customerName}, this is Sanjit Mishra from VoltixNepal regarding your electrical service request #${request.requestId}.`
   )}`;
 
   return (
