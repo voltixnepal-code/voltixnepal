@@ -118,9 +118,9 @@ export default function Navbar({ settings }: NavbarProps) {
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           
-          {/* Brand Logo - clean sizing without artificial scaling to prevent text overlap */}
+          {/* Brand Logo */}
           <div className="shrink-0 mr-4 lg:mr-8">
-            <BrandLogo size="md" href="/" />
+            <BrandLogo size="lg" href="/" />
           </div>
 
           {/* Desktop Navigation Links */}

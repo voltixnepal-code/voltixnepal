@@ -20,12 +20,12 @@ export default function BrandLogo({
 }: BrandLogoProps) {
   const isLight = variant === 'light';
 
-  // Height sizing for the logo - scaled up for prominence without stretching navbar
+  // Height sizing for the logo - prominent, bold and readable across all devices
   const heightClasses = {
-    sm: 'h-10 sm:h-12 max-w-[220px]',
-    md: 'h-14 sm:h-16 md:h-18 max-w-[320px] sm:max-w-[420px]',
-    lg: 'h-16 sm:h-20 md:h-24 max-w-[380px] sm:max-w-[480px]',
-    xl: 'h-20 sm:h-24 md:h-30 max-w-[440px] sm:max-w-[560px]',
+    sm: 'h-8 sm:h-9 max-w-[180px]',
+    md: 'h-10 sm:h-12 md:h-14 max-w-[280px] sm:max-w-[340px]',
+    lg: 'h-12 sm:h-14 md:h-16 max-w-[340px] sm:max-w-[420px]',
+    xl: 'h-14 sm:h-18 md:h-20 max-w-[400px] sm:max-w-[500px]',
   }[size];
 
   const logoSrc =
@@ -33,7 +33,7 @@ export default function BrandLogo({
       ? '/icon.svg'
       : type === 'square'
       ? '/logo (2).PNG'
-      : '/volti-x-nepal-logo.svg';
+      : '/logo (1).PNG';
 
   // Transparent logo with illumination on dark theme for 100% clarity
   const imageFilterClass = isLight
@@ -48,8 +48,8 @@ export default function BrandLogo({
         className={`${heightClasses} ${imageFilterClass} w-auto object-contain group-hover:scale-105 transition-transform duration-200`}
         onError={(e) => {
           const target = e.currentTarget;
-          if (target.src.indexOf('logo%20(1).PNG') === -1) {
-            target.src = '/logo (1).PNG';
+          if (target.src.indexOf('volti-x-nepal-logo.svg') === -1) {
+            target.src = '/volti-x-nepal-logo.svg';
           }
         }}
       />
