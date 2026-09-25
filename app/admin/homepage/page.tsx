@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   Layers,
   ArrowUp,
@@ -13,21 +12,19 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Edit3,
   ExternalLink,
-  Sparkles,
   Upload,
   Plus,
   Trash2,
   Check,
-  ShieldCheck,
-  Phone,
   User,
   SlidersHorizontal,
   Wrench,
   MessageSquareQuote,
   HelpCircle,
   FileText,
+  Phone,
+  ShieldCheck,
 } from 'lucide-react';
 import { adminFetch } from '@/lib/admin-fetch';
 
@@ -37,9 +34,6 @@ export default function AdminHomepageBuilder() {
   const [savingLayout, setSavingLayout] = useState(false);
   const [savedLayoutMessage, setSavedLayoutMessage] = useState(false);
   const [errorLayoutMessage, setErrorLayoutMessage] = useState<string | null>(null);
-
-  // Active section to edit content inline (default open to 'about' so user sees it right away!)
-  const [editingSection, setEditingSection] = useState<'about' | null>('about');
 
   // Contractor / About Section Form State
   const [aboutSettings, setAboutSettings] = useState({
@@ -212,14 +206,25 @@ export default function AdminHomepageBuilder() {
     try {
       const res = await adminFetch('/api/settings', {
         method: 'PUT',
-        body: JSON.stringify(aboutSettings),
+        body: JSON.stringify({
+          ownerName: aboutSettings.ownerName,
+          phone: aboutSettings.phone,
+          aboutOwnerTitle: aboutSettings.aboutOwnerTitle,
+          aboutOwnerPhoto: aboutSettings.aboutOwnerPhoto,
+          aboutHeadline: aboutSettings.aboutHeadline,
+          aboutBio1: aboutSettings.aboutBio1,
+          aboutBio2: aboutSettings.aboutBio2,
+          aboutHighlights: aboutSettings.aboutHighlights,
+          aboutBookBtnText: aboutSettings.aboutBookBtnText,
+        }),
       });
 
       if (res.ok && res.data?.success) {
         setSavedAboutSuccess(true);
         setTimeout(() => setSavedAboutSuccess(false), 3500);
       } else {
-        throw new Error(res.error || res.data?.message || 'Failed to save changes');
+        const err = res.data?.message || res.error || 'Failed to save changes. Please try again.';
+        throw new Error(typeof err === 'string' ? err : JSON.stringify(err));
       }
     } catch (err: any) {
       setAboutError(err.message || 'An error occurred while saving.');
@@ -229,56 +234,44 @@ export default function AdminHomepageBuilder() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-12">
-      {/* Top Banner Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">
-              Homepage Layout & Sections CMS
-            </h1>
-            <span className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[10px] font-bold">
-              Live Homepage Editor
-            </span>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Edit text, headlines, photos, and order for all sections on the front page.
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+            Homepage Content & Layout
+          </h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Manage section content and ordering on the live homepage.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link
-            href="/"
-            target="_blank"
-            className="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5 shadow-2xs"
-          >
-            <Eye className="w-3.5 h-3.5 text-slate-500" />
-            <span>View Live Website</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
-          </Link>
-        </div>
+        <Link
+          href="/"
+          target="_blank"
+          className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 self-start sm:self-auto"
+        >
+          <Eye className="w-3.5 h-3.5 text-slate-500" />
+          <span>View Live Site</span>
+          <ExternalLink className="w-3 h-3 text-slate-400" />
+        </Link>
       </div>
 
       {/* ========================================================================= */}
-      {/* SECTION EDIT FOCUS: "Experienced Hands-On Electrical Contractor" (ABOUT) */}
+      {/* CONTRACTOR SECTION CONTENT EDITOR (NORMAL, CLEAN HUMAN DESIGN) */}
       {/* ========================================================================= */}
-      <div className="bg-white rounded-2xl border-2 border-red-500/80 shadow-md overflow-hidden">
-        {/* Header Ribbon */}
-        <div className="bg-slate-900 text-white p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center shrink-0 shadow-sm">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        {/* Clean Header Bar */}
+        <div className="p-4 sm:p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+          <div className="flex items-center gap-2.5">
+            <User className="w-5 h-5 text-red-600" />
             <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 rounded bg-red-600/40 text-red-300 font-bold text-[10px] uppercase border border-red-500/40">
-                  Featured Homepage Section
-                </span>
-                <span className="text-xs text-slate-400 font-mono">key: about</span>
-              </div>
-              <h2 className="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
-                Contractor Profile: &ldquo;Experienced Hands-On Electrical Contractor in Kathmandu&rdquo;
+              <h2 className="text-sm font-bold text-slate-900">
+                Contractor Profile Section (&ldquo;Experienced Hands-On Electrical Contractor&rdquo;)
               </h2>
+              <p className="text-xs text-slate-500">
+                Homepage section with contractor photo, biography, services checklist, and direct contact.
+              </p>
             </div>
           </div>
 
@@ -286,40 +279,37 @@ export default function AdminHomepageBuilder() {
             type="button"
             onClick={handleSaveAbout}
             disabled={savingAbout}
-            className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2 shrink-0"
+            className="btn-primary text-xs flex items-center gap-1.5 shrink-0"
           >
-            {savingAbout ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            <span>{savingAbout ? 'Saving to Homepage...' : 'Save Section Changes'}</span>
+            {savingAbout ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            <span>{savingAbout ? 'Saving...' : 'Save Section'}</span>
           </button>
         </div>
 
-        {/* Success/Error Alerts */}
+        {/* Alerts */}
         {savedAboutSuccess && (
-          <div className="m-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+          <div className="m-4 p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>Success! The &ldquo;Experienced Hands-On Electrical Contractor&rdquo; section has been updated live on your homepage.</span>
+            <span>Saved successfully! Changes are live on the homepage.</span>
           </div>
         )}
 
         {aboutError && (
-          <div className="m-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2">
+          <div className="m-4 p-3.5 rounded-lg bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
             <span>{aboutError}</span>
           </div>
         )}
 
-        {/* Live Visual Preview & Editor Grid */}
-        <form onSubmit={handleSaveAbout} className="p-5 sm:p-6 space-y-6">
+        {/* Form Body */}
+        <form onSubmit={handleSaveAbout} className="p-5 sm:p-6 space-y-5">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            {/* Left Column: Photo & Contractor Card */}
-            <div className="lg:col-span-4 space-y-4">
-              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-                1. Contractor Photo & Card
-              </label>
+            {/* Photo Column */}
+            <div className="lg:col-span-4 space-y-3">
+              <label className="block text-xs font-bold text-slate-700">Contractor Photo</label>
 
-              {/* Photo Box with Overlay */}
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 aspect-[4/3] group shadow-inner">
+              <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-slate-100 aspect-[4/3]">
                 {aboutSettings.aboutOwnerPhoto ? (
                   <img
                     src={aboutSettings.aboutOwnerPhoto}
@@ -327,25 +317,22 @@ export default function AdminHomepageBuilder() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-slate-400">
-                    <User className="w-12 h-12" />
-                    <span className="text-[11px] mt-1">No Photo</span>
+                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
+                    No photo uploaded
                   </div>
                 )}
+              </div>
 
-                {/* Upload Button Overlay */}
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-white p-4">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingPhoto}
-                    className="px-3.5 py-1.5 rounded-lg bg-white text-slate-900 text-xs font-bold transition-all shadow-md flex items-center gap-1.5 hover:bg-slate-100"
-                  >
-                    {uploadingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" /> : <Upload className="w-3.5 h-3.5 text-red-600" />}
-                    <span>{uploadingPhoto ? 'Uploading...' : 'Upload New Photo'}</span>
-                  </button>
-                  <span className="text-[10px] text-slate-200">JPG, PNG, WebP up to 95MB</span>
-                </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingPhoto}
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 w-full justify-center"
+                >
+                  {uploadingPhoto ? <Loader2 className="w-3.5 h-3.5 animate-spin text-red-600" /> : <Upload className="w-3.5 h-3.5 text-slate-500" />}
+                  <span>{uploadingPhoto ? 'Uploading...' : 'Upload New Photo'}</span>
+                </button>
               </div>
 
               <input
@@ -357,133 +344,114 @@ export default function AdminHomepageBuilder() {
               />
 
               <div className="space-y-1">
-                <label className="block text-[11px] font-bold text-slate-600">Photo URL (or upload above)</label>
+                <label className="block text-[11px] text-slate-500">Or paste Image URL directly</label>
                 <input
                   type="url"
                   value={aboutSettings.aboutOwnerPhoto || ''}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, aboutOwnerPhoto: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 font-mono"
+                  placeholder="https://images.unsplash.com/..."
+                  className="form-input text-xs w-full"
                 />
               </div>
 
-              {/* Contractor Name & Title Badge */}
-              <div className="p-3.5 rounded-xl bg-slate-900 text-white space-y-2.5">
+              {/* Name & Title */}
+              <div className="pt-2 space-y-2 border-t border-slate-100">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Contractor Name
-                  </label>
+                  <label className="block text-xs font-semibold text-slate-700">Contractor Name</label>
                   <input
                     type="text"
                     value={aboutSettings.ownerName}
                     onChange={(e) => setAboutSettings({ ...aboutSettings, ownerName: e.target.value })}
-                    className="w-full px-2.5 py-1 text-xs rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:border-red-500 font-bold"
+                    className="form-input text-xs w-full mt-1"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Designation / Title
-                  </label>
+                  <label className="block text-xs font-semibold text-slate-700">Designation / Role Title</label>
                   <input
                     type="text"
                     value={aboutSettings.aboutOwnerTitle || ''}
                     onChange={(e) => setAboutSettings({ ...aboutSettings, aboutOwnerTitle: e.target.value })}
                     placeholder="Lead Electrician & Proprietor"
-                    className="w-full px-2.5 py-1 text-xs rounded-lg bg-slate-800 text-white border border-slate-700 focus:outline-none focus:border-red-500"
+                    className="form-input text-xs w-full mt-1"
                   />
-                </div>
-
-                <div className="flex items-center justify-between pt-1 border-t border-slate-800 text-[11px] text-slate-400">
-                  <span>Badge on Photo:</span>
-                  <span className="px-2 py-0.5 rounded bg-red-600 text-white text-[10px] font-bold flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> VoltixNepal
-                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Right Column: Headline, Bio Text, Bullets, and Buttons */}
+            {/* Right: Text & Content Column */}
             <div className="lg:col-span-8 space-y-4">
-              <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-                2. Headline & Content Paragraphs
-              </label>
-
-              {/* Big Headline */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">
-                  Headline Title (The Main Large Title)
-                </label>
+              {/* Main Headline */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700">Headline Title</label>
                 <input
                   type="text"
                   value={aboutSettings.aboutHeadline || ''}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, aboutHeadline: e.target.value })}
                   placeholder="Experienced Hands-On Electrical Contractor in Kathmandu"
-                  className="w-full px-3.5 py-2.5 text-sm font-extrabold rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 text-slate-900"
+                  className="form-input text-sm font-bold w-full mt-1"
                 />
               </div>
 
               {/* Paragraph 1 */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-700">Paragraph 1 (Introduction)</label>
-                  <span className="text-[10px] text-slate-500">
-                    Use <code>{'{ownerName}'}</code> to auto-insert the contractor name
-                  </span>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700">
+                  Intro Paragraph (Bio 1)
+                </label>
                 <textarea
                   rows={3}
                   value={aboutSettings.aboutBio1 || ''}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, aboutBio1: e.target.value })}
                   placeholder="Hello, I am {ownerName}, the founder and chief electrician at VoltixNepal..."
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 text-slate-800 leading-relaxed"
+                  className="form-input text-xs w-full mt-1"
                 />
               </div>
 
               {/* Paragraph 2 */}
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">Paragraph 2 (Services & Safety Guarantee)</label>
+              <div>
+                <label className="block text-xs font-bold text-slate-700">
+                  Service Description (Bio 2)
+                </label>
                 <textarea
                   rows={3}
                   value={aboutSettings.aboutBio2 || ''}
                   onChange={(e) => setAboutSettings({ ...aboutSettings, aboutBio2: e.target.value })}
                   placeholder="Whether you are rewiring a building, diagnosing a recurring circuit breaker trip..."
-                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 text-slate-800 leading-relaxed"
+                  className="form-input text-xs w-full mt-1"
                 />
               </div>
 
               {/* 4 Bullet Highlights */}
-              <div className="space-y-2 pt-2">
+              <div className="space-y-2 pt-2 border-t border-slate-100">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Key Service Checkpoints / Bullets (with Red Checkmarks)
+                  <label className="block text-xs font-bold text-slate-700">
+                    Service Checkpoints (Bulleted Highlights)
                   </label>
                   <button
                     type="button"
                     onClick={addHighlight}
-                    className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1"
+                    className="text-xs font-semibold text-red-600 hover:text-red-700 flex items-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Add Bullet Point</span>
+                    <span>Add Item</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {highlightsList.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
-                      <Check className="w-4 h-4 text-red-600 shrink-0" />
+                    <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
+                      <Check className="w-3.5 h-3.5 text-red-600 shrink-0" />
                       <input
                         type="text"
                         value={item}
                         onChange={(e) => updateHighlight(idx, e.target.value)}
-                        placeholder={`Bullet #${idx + 1}`}
-                        className="w-full text-xs bg-transparent border-0 focus:outline-none text-slate-900 font-semibold"
+                        className="w-full text-xs bg-transparent border-0 focus:outline-none text-slate-800 font-medium"
                       />
                       {highlightsList.length > 1 && (
                         <button
                           type="button"
                           onClick={() => removeHighlight(idx)}
-                          className="text-slate-400 hover:text-red-600 transition-colors p-1"
+                          className="text-slate-400 hover:text-red-600 transition-colors p-0.5"
                           title="Remove item"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -494,40 +462,40 @@ export default function AdminHomepageBuilder() {
                 </div>
               </div>
 
-              {/* CTA Action Buttons Editor */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700">Red Primary Button Text</label>
+              {/* Button & Phone */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Booking Button Text</label>
                   <input
                     type="text"
                     value={aboutSettings.aboutBookBtnText || ''}
                     onChange={(e) => setAboutSettings({ ...aboutSettings, aboutBookBtnText: e.target.value })}
                     placeholder="Book a Service with Sanjit"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 font-bold text-red-700"
+                    className="form-input text-xs w-full mt-1"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700">Phone Call Button Number</label>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700">Call Directly Phone Number</label>
                   <input
                     type="text"
                     value={aboutSettings.phone || ''}
                     onChange={(e) => setAboutSettings({ ...aboutSettings, phone: e.target.value })}
                     placeholder="+977 9825870047"
-                    className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20 font-bold text-slate-800"
+                    className="form-input text-xs w-full mt-1"
                   />
                 </div>
               </div>
 
-              {/* Submit Save Button */}
-              <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+              {/* Save Footer */}
+              <div className="pt-2 flex justify-end">
                 <button
                   type="submit"
                   disabled={savingAbout}
-                  className="px-6 py-3 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-md flex items-center gap-2"
+                  className="btn-primary text-xs flex items-center gap-1.5"
                 >
-                  {savingAbout ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  <span>{savingAbout ? 'Saving Changes...' : 'Save & Publish to Homepage'}</span>
+                  {savingAbout ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  <span>{savingAbout ? 'Saving...' : 'Save Section'}</span>
                 </button>
               </div>
             </div>
@@ -537,125 +505,111 @@ export default function AdminHomepageBuilder() {
       </div>
 
       {/* ========================================================================= */}
-      {/* SECTION RE-ORDERING & TOGGLE LIST */}
+      {/* SECTION ORDERING & TOGGLES */}
       {/* ========================================================================= */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <Layers className="w-5 h-5 text-red-600" />
-              <span>All Homepage Sections & Order</span>
+            <h2 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-slate-600" />
+              <span>Homepage Section Layout & Ordering</span>
             </h2>
             <p className="text-xs text-slate-500">
-              Drag or use Up/Down arrows to reorder sections. Toggle Visible to hide/show on homepage.
+              Use arrows to arrange order or toggle to hide/show sections on the homepage.
             </p>
           </div>
 
           <button
             onClick={handleSaveLayout}
             disabled={savingLayout}
-            className="btn-primary text-xs flex items-center gap-1.5 self-start sm:self-auto shadow-sm"
+            className="btn-secondary text-xs flex items-center gap-1.5 self-start sm:self-auto"
           >
             {savingLayout ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            <span>Save Section Ordering</span>
+            <span>Save Order</span>
           </button>
         </div>
 
         {savedLayoutMessage && (
-          <div className="p-3.5 rounded-md bg-emerald-50 border border-emerald-200 flex items-center gap-2 text-xs font-semibold text-emerald-800">
+          <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center gap-2 text-xs font-semibold text-emerald-800">
             <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-            <span>Homepage section ordering updated successfully!</span>
+            <span>Section ordering updated successfully!</span>
           </div>
         )}
 
         {errorLayoutMessage && (
-          <div className="p-3.5 rounded-md bg-red-50 border border-red-200 flex items-center gap-2 text-xs font-semibold text-red-800">
+          <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2 text-xs font-semibold text-red-800">
             <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
             <span>{errorLayoutMessage}</span>
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden divide-y divide-slate-100">
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden divide-y divide-slate-100">
           {sections.map((sec, idx) => {
-            const isAboutSection = sec.sectionKey === 'about' || sec.sectionKey === 'about_snippet';
+            const isAbout = sec.sectionKey === 'about' || sec.sectionKey === 'about_snippet';
 
             return (
               <div
                 key={sec.id || sec.sectionKey}
-                className={`p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
-                  isAboutSection ? 'bg-red-50/30 border-l-4 border-l-red-600' : 'hover:bg-slate-50/60'
-                }`}
+                className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/60"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center">
+                <div className="flex items-center gap-3">
+                  <span className="w-7 h-7 rounded bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center">
                     {idx + 1}
-                  </div>
+                  </span>
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-sm text-slate-900">{sec.label}</span>
-                      {isAboutSection && (
-                        <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-bold">
-                          Edited in Form Above
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[11px] font-mono text-slate-400 mt-0.5">
-                      Key: {sec.sectionKey}
-                    </div>
+                    <span className="font-semibold text-xs text-slate-900">{sec.label}</span>
+                    <span className="text-[10px] font-mono text-slate-400 ml-2">key: {sec.sectionKey}</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  {/* Direct Edit Links for each section */}
-                  {isAboutSection ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Quick edit links */}
+                  {isAbout ? (
                     <button
                       type="button"
-                      onClick={() => {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs"
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium"
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>Edit Content (Above)</span>
+                      Edit Content (Above)
                     </button>
                   ) : sec.sectionKey === 'hero' ? (
                     <Link
                       href="/admin/hero"
-                      className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5"
+                      className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1"
                     >
-                      <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+                      <SlidersHorizontal className="w-3 h-3 text-slate-400" />
                       <span>Edit Slides</span>
                     </Link>
                   ) : sec.sectionKey === 'services' ? (
                     <Link
                       href="/admin/services"
-                      className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5"
+                      className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1"
                     >
-                      <Wrench className="w-3.5 h-3.5 text-slate-500" />
+                      <Wrench className="w-3 h-3 text-slate-400" />
                       <span>Edit Services</span>
                     </Link>
                   ) : sec.sectionKey === 'testimonials' ? (
                     <Link
                       href="/admin/testimonials"
-                      className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5"
+                      className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1"
                     >
-                      <MessageSquareQuote className="w-3.5 h-3.5 text-slate-500" />
+                      <MessageSquareQuote className="w-3 h-3 text-slate-400" />
                       <span>Edit Reviews</span>
                     </Link>
                   ) : sec.sectionKey === 'faq' ? (
                     <Link
                       href="/admin/faq"
-                      className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5"
+                      className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1"
                     >
-                      <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
+                      <HelpCircle className="w-3 h-3 text-slate-400" />
                       <span>Edit FAQs</span>
                     </Link>
                   ) : sec.sectionKey === 'blog' ? (
                     <Link
                       href="/admin/blog"
-                      className="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5"
+                      className="px-2.5 py-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium flex items-center gap-1"
                     >
-                      <FileText className="w-3.5 h-3.5 text-slate-500" />
+                      <FileText className="w-3 h-3 text-slate-400" />
                       <span>Edit Blog</span>
                     </Link>
                   ) : null}
@@ -664,7 +618,7 @@ export default function AdminHomepageBuilder() {
                   <button
                     type="button"
                     onClick={() => toggleSection(idx)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors ${
+                    className={`px-2.5 py-1 rounded text-xs font-semibold flex items-center gap-1 border ${
                       sec.isEnabled
                         ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                         : 'bg-slate-100 border-slate-200 text-slate-400'
@@ -672,12 +626,12 @@ export default function AdminHomepageBuilder() {
                   >
                     {sec.isEnabled ? (
                       <>
-                        <Eye className="w-3.5 h-3.5" />
+                        <Eye className="w-3 h-3" />
                         <span>Visible</span>
                       </>
                     ) : (
                       <>
-                        <EyeOff className="w-3.5 h-3.5" />
+                        <EyeOff className="w-3 h-3" />
                         <span>Hidden</span>
                       </>
                     )}
@@ -689,19 +643,19 @@ export default function AdminHomepageBuilder() {
                       type="button"
                       onClick={() => moveSection(idx, 'UP')}
                       disabled={idx === 0}
-                      className="p-1.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:hover:bg-transparent"
+                      className="p-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-30"
                       title="Move Up"
                     >
-                      <ArrowUp className="w-3.5 h-3.5" />
+                      <ArrowUp className="w-3 h-3" />
                     </button>
                     <button
                       type="button"
                       onClick={() => moveSection(idx, 'DOWN')}
                       disabled={idx === sections.length - 1}
-                      className="p-1.5 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-30 disabled:hover:bg-transparent"
+                      className="p-1 rounded border border-slate-200 hover:bg-slate-100 text-slate-600 disabled:opacity-30"
                       title="Move Down"
                     >
-                      <ArrowDown className="w-3.5 h-3.5" />
+                      <ArrowDown className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
