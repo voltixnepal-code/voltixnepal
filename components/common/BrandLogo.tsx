@@ -20,12 +20,12 @@ export default function BrandLogo({
 }: BrandLogoProps) {
   const isLight = variant === 'light';
 
-  // Height sizing for the logo - extra prominent, bold and readable across all devices
+  // Height sizing for the logo - prominent, bold and readable across all devices
   const heightClasses = {
-    sm: 'h-10 sm:h-12 max-w-[220px]',
-    md: 'h-12 sm:h-14 md:h-16 max-w-[320px] sm:max-w-[400px]',
-    lg: 'h-14 sm:h-16 md:h-20 max-w-[380px] sm:max-w-[480px]',
-    xl: 'h-16 sm:h-20 md:h-24 max-w-[450px] sm:max-w-[560px]',
+    sm: 'h-9 sm:h-11 max-w-[200px]',
+    md: 'h-11 sm:h-13 md:h-15 max-w-[280px] sm:max-w-[360px]',
+    lg: 'h-13 sm:h-15 md:h-18 max-w-[340px] sm:max-w-[420px]',
+    xl: 'h-16 sm:h-20 md:h-24 max-w-[420px] sm:max-w-[500px]',
   }[size];
 
   const logoSrc =
@@ -33,23 +33,20 @@ export default function BrandLogo({
       ? '/icon.svg'
       : type === 'square'
       ? '/logo (2).PNG'
+      : isLight
+      ? '/logo-white.png'
       : '/logo (1).PNG';
-
-  // Transparent logo with illumination on dark theme for 100% clarity
-  const imageFilterClass = isLight
-    ? '[filter:drop-shadow(0_0_1.5px_#ffffff)_drop-shadow(0_0_6px_rgba(255,255,255,0.4))]'
-    : '';
 
   const logoContent = (
     <div className={`bg-transparent inline-flex items-center group select-none ${className}`}>
       <img
         src={logoSrc}
         alt="VOLTI X NEPAL"
-        className={`${heightClasses} ${imageFilterClass} w-auto object-contain group-hover:scale-105 transition-transform duration-200`}
+        className={`${heightClasses} w-auto object-contain group-hover:scale-105 transition-transform duration-200`}
         onError={(e) => {
           const target = e.currentTarget;
-          if (target.src.indexOf('volti-x-nepal-logo.svg') === -1) {
-            target.src = '/volti-x-nepal-logo.svg';
+          if (target.src.indexOf('logo (1).PNG') === -1) {
+            target.src = '/logo (1).PNG';
           }
         }}
       />
@@ -66,3 +63,4 @@ export default function BrandLogo({
 
   return logoContent;
 }
+
