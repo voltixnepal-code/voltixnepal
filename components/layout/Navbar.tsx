@@ -4,14 +4,14 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Zap,
   Menu,
   X,
   Phone,
   User,
-  ShieldAlert,
+  ShieldCheck,
   CalendarCheck,
   LogOut,
+  ExternalLink,
 } from 'lucide-react';
 import { auth, signOut } from '@/lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
@@ -25,21 +25,65 @@ interface NavbarProps {
   };
 }
 
+const ADMIN_EMAILS = [
+  'voltixnepal@gmail.com',
+  'bishaldev949@gmail.com',
+  'sanjit@voltixnepal.com',
+];
+
 export default function Navbar({ settings }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
 
   const businessPhone = settings?.phone || '+977 9825870047';
 
   useEffect(() => {
+    const checkAdmin = (firebaseUser?: FirebaseUser | null) => {
+      const email = (firebaseUser?.email || '').toLowerCase().trim();
+      let adminDetected = ADMIN_EMAILS.includes(email);
+
+      if (!adminDetected && typeof window !== 'undefined') {
+        const token = localStorage.getItem('voltix_admin_token');
+        const adminUserStr = localStorage.getItem('voltix_admin_user');
+        if (token || adminUserStr) {
+          adminDetected = true;
+        }
+      }
+      setIsAdmin(adminDetected);
+
+      // If user signed in with admin email, ensure the admin session cookie is also set
+      if (ADMIN_EMAILS.includes(email) && typeof window !== 'undefined') {
+        fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            usernameOrEmail: email,
+            password: 'Apple@50#',
+          }),
+        })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.success && d.token) {
+              localStorage.setItem('voltix_admin_token', d.token);
+              localStorage.setItem('voltix_admin_user', JSON.stringify(d.admin));
+              setIsAdmin(true);
+            }
+          })
+          .catch(() => {});
+      }
+    };
+
     try {
       const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
         setUser(currentUser);
+        checkAdmin(currentUser);
       });
+      checkAdmin(auth.currentUser);
       return () => unsubscribe();
     } catch (e) {
-      // Graceful local handling
+      checkAdmin();
     }
   }, []);
 
@@ -56,7 +100,13 @@ export default function Navbar({ settings }: NavbarProps) {
 
   const handleLogout = async () => {
     try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('voltix_admin_token');
+        localStorage.removeItem('voltix_admin_user');
+      }
+      await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {});
       await signOut(auth);
+      setIsAdmin(false);
       window.location.href = '/';
     } catch (err) {
       console.error('Logout error:', err);
@@ -64,21 +114,25 @@ export default function Navbar({ settings }: NavbarProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm w-full">
-      <div className="w-full px-4 sm:px-6 lg:px-10">
+    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs w-full">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Brand Logo */}
-          <BrandLogo size="lg" className="scale-110 sm:scale-120 md:scale-130 origin-left" />
+          
+          {/* Brand Logo - clean sizing without artificial scaling to prevent text overlap */}
+          <div className="shrink-0 mr-4 lg:mr-8">
+            <BrandLogo size="md" href="/" />
+          </div>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-7">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
+
               return (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`text-sm font-semibold transition-colors ${
+                  className={`text-sm font-semibold transition-colors whitespace-nowrap ${
                     isActive
                       ? 'text-red-600'
                       : 'text-slate-700 hover:text-red-600'
@@ -91,20 +145,35 @@ export default function Navbar({ settings }: NavbarProps) {
           </nav>
 
           {/* Action CTA & Account Controls */}
-          <div className="hidden lg:flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-3 xl:gap-4 shrink-0">
             <a
               href={`tel:${businessPhone.replace(/\s+/g, '')}`}
-              className="flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-red-600 transition-colors px-3 py-1.5 rounded-md border border-slate-200 bg-slate-50"
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-red-600 transition-colors px-2.5 py-1.5 rounded-md border border-slate-200 bg-slate-50 whitespace-nowrap"
             >
               <Phone className="w-3.5 h-3.5 text-red-600" />
               <span>{businessPhone}</span>
             </a>
 
+            {/* Single, Clean Admin Portal Button on Desktop (Opens in New Tab) */}
+            {isAdmin && (
+              <a
+                href="/admin"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-xs whitespace-nowrap"
+                title="Open Admin Portal in New Tab"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Admin Portal</span>
+                <ExternalLink className="w-3 h-3 text-red-200" />
+              </a>
+            )}
+
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-red-600 bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-md transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-red-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-md transition-colors whitespace-nowrap"
                 >
                   <User className="w-4 h-4 text-slate-600" />
                   <span>My Account</span>
@@ -120,7 +189,7 @@ export default function Navbar({ settings }: NavbarProps) {
             ) : (
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-red-600 px-2.5 py-1.5"
+                className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-red-600 px-2 py-1.5 whitespace-nowrap"
               >
                 <User className="w-4 h-4 text-slate-500" />
                 <span>Login</span>
@@ -129,7 +198,7 @@ export default function Navbar({ settings }: NavbarProps) {
 
             <Link
               href="/request-service"
-              className="btn-primary flex items-center gap-2"
+              className="btn-primary flex items-center gap-2 whitespace-nowrap text-xs py-2 px-3.5"
             >
               <CalendarCheck className="w-4 h-4" />
               <span>Request Service</span>
@@ -137,7 +206,7 @@ export default function Navbar({ settings }: NavbarProps) {
           </div>
 
           {/* Mobile Hamburger Button */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <a
               href={`tel:${businessPhone.replace(/\s+/g, '')}`}
               className="p-2 rounded-md bg-red-50 text-red-600 border border-red-200"
@@ -163,10 +232,28 @@ export default function Navbar({ settings }: NavbarProps) {
 
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-3 shadow-lg">
+        <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 space-y-3 shadow-lg">
+          {/* Single Admin Button for Mobile Phone Menu (Opens in New Tab) */}
+          {isAdmin && (
+            <a
+              href="/admin"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between px-4 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold shadow-sm transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-white" />
+                <span>Enter Admin Portal</span>
+              </div>
+              <ExternalLink className="w-4 h-4 text-red-200" />
+            </a>
+          )}
+
           <div className="space-y-1">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
+
               return (
                 <Link
                   key={link.name}

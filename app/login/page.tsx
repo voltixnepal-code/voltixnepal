@@ -33,11 +33,11 @@ export default function CustomerLoginPage() {
 
     const cleanInput = identifier.trim().toLowerCase();
 
-    // 1. Auto-detect Admin Credentials (username voltixnepal, admin emails, or Apple@50# password)
     const isAdminAttempt =
       cleanInput === 'voltixnepal' ||
       cleanInput === 'voltixnepal@gmail.com' ||
       cleanInput === 'bishaldev949@gmail.com' ||
+      cleanInput === 'sanjit@voltixnepal.com' ||
       password === 'Apple@50#';
 
     if (isAdminAttempt) {
@@ -53,8 +53,12 @@ export default function CustomerLoginPage() {
 
         const adminData = await adminRes.json();
         if (adminRes.ok && adminData.success) {
-          router.push('/admin');
-          router.refresh();
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('voltix_admin_token', adminData.token);
+            localStorage.setItem('voltix_admin_user', JSON.stringify(adminData.admin));
+          }
+          window.open('/admin', '_blank');
+          window.location.href = '/';
           return;
         }
       } catch (adminErr) {
@@ -69,6 +73,32 @@ export default function CustomerLoginPage() {
         identifier,
         password
       );
+
+      const email = (userCredential.user.email || '').toLowerCase().trim();
+      const adminEmails = ['voltixnepal@gmail.com', 'bishaldev949@gmail.com', 'sanjit@voltixnepal.com'];
+
+      if (adminEmails.includes(email)) {
+        try {
+          const adminRes = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              usernameOrEmail: email,
+              password: 'Apple@50#',
+            }),
+          });
+          const adminData = await adminRes.json();
+          if (adminRes.ok && adminData.success) {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('voltix_admin_token', adminData.token);
+              localStorage.setItem('voltix_admin_user', JSON.stringify(adminData.admin));
+            }
+            window.open('/admin', '_blank');
+            window.location.href = '/';
+            return;
+          }
+        } catch (e) {}
+      }
 
       // Sync with database
       await fetch('/api/auth/sync-user', {
@@ -106,9 +136,10 @@ export default function CustomerLoginPage() {
       const userEmail = (result.user.email || '').toLowerCase().trim();
 
       // Check if admin Google account
-      if (userEmail === 'voltixnepal@gmail.com' || userEmail === 'bishaldev949@gmail.com') {
+      const adminEmails = ['voltixnepal@gmail.com', 'bishaldev949@gmail.com', 'sanjit@voltixnepal.com'];
+      if (adminEmails.includes(userEmail)) {
         try {
-          await fetch('/api/admin/login', {
+          const adminRes = await fetch('/api/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -116,9 +147,16 @@ export default function CustomerLoginPage() {
               password: 'Apple@50#',
             }),
           });
-          router.push('/admin');
-          router.refresh();
-          return;
+          const adminData = await adminRes.json();
+          if (adminRes.ok && adminData.success) {
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('voltix_admin_token', adminData.token);
+              localStorage.setItem('voltix_admin_user', JSON.stringify(adminData.admin));
+            }
+            window.open('/admin', '_blank');
+            window.location.href = '/';
+            return;
+          }
         } catch (e) {
           // fallback
         }
