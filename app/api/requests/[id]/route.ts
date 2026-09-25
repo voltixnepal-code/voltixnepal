@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminRequest } from '@/lib/auth-guard';
-import { sendStatusUpdateEmail } from '@/lib/email';
+import { sendStatusUpdateEmail, sendPaymentInvoiceEmail } from '@/lib/email';
 
 export async function GET(
   req: NextRequest,
@@ -152,8 +152,41 @@ export async function PATCH(
       },
     });
 
-    // Send Status Update Email to Customer in background if status or assigned technician changed
-    if (updated.customerEmail && (body.status !== undefined || body.adminAssigned !== undefined)) {
+    // Send Payment Receipt & PDF Invoice Email to Customer if payment received or updated
+    const isPaymentUpdate =
+      (body.paidAmount !== undefined && Number(body.paidAmount) > 0) ||
+      body.paymentStatus === 'PAID' ||
+      (body.paymentStatus === 'PARTIAL' && Number(updated.paidAmount) > 0);
+
+    if (updated.customerEmail && isPaymentUpdate) {
+      prisma.websiteSettings.findUnique({ where: { id: 'default_settings' } }).then((settings) => {
+        sendPaymentInvoiceEmail(
+          {
+            requestId: updated.requestId,
+            customerName: updated.customerName,
+            customerEmail: updated.customerEmail,
+            customerPhone: updated.customerPhone,
+            customerAddress: `${updated.address}${updated.area ? `, ${updated.area}` : ''}, ${updated.city}`,
+            serviceName: updated.serviceName,
+            description: updated.description,
+            billedAmount: Number(updated.billedAmount) || 0,
+            paidAmount: Number(updated.paidAmount) || 0,
+            paymentStatus: updated.paymentStatus,
+            paymentMethod: updated.paymentMethod,
+            paymentNotes: updated.paymentNotes,
+            adminAssigned: updated.adminAssigned,
+            paidAt: updated.paidAt,
+          },
+          {
+            phone: settings?.phone,
+            whatsappNumber: settings?.whatsappNumber,
+          }
+        ).catch((err) => console.error('Failed sending payment invoice email:', err));
+      });
+    }
+
+    // Send Status Update Email to Customer in background if status or assigned technician changed (and not just payment)
+    if (updated.customerEmail && (body.status !== undefined || body.adminAssigned !== undefined) && !isPaymentUpdate) {
       prisma.websiteSettings.findUnique({ where: { id: 'default_settings' } }).then((settings) => {
         sendStatusUpdateEmail(
           {
