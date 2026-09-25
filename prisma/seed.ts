@@ -566,12 +566,105 @@ For thorough safety inspections in Kathmandu, Lalitpur, or Bhaktapur, schedule a
     await prisma.blogPost.create({ data: post });
   }
 
-  // 8. Create Initial Admin Notification
+  // 8. Gallery Items (Photos & Videos)
+  const galleryItems = [
+    {
+      title: 'Full 3-Storey House Concealed Conduit Wiring',
+      description: 'Complete slab and brick-wall conduit piping with flame-retardant copper wiring and modular metal box fitting.',
+      mediaType: 'PHOTO',
+      storageProvider: 'CLOUDINARY',
+      mediaUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1200&q=80',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=600&q=80',
+      category: 'House Wiring',
+      location: 'Baneshwor, Kathmandu',
+      isPublished: true,
+      sortOrder: 1,
+    },
+    {
+      title: '24/7 Emergency MCB Tripping & Burnt Neutral Line Repair',
+      description: 'Troubleshooting repeated circuit breaker tripping caused by a damaged neutral line inside wall conduit.',
+      mediaType: 'VIDEO',
+      storageProvider: 'CLOUDFLARE_R2',
+      mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=600&q=80',
+      category: 'Emergency Repair',
+      location: 'Jhamsikhel, Lalitpur',
+      isPublished: true,
+      sortOrder: 2,
+    },
+    {
+      title: 'Dual 220AH Tubular Battery & Pure Sine Wave Inverter Setup',
+      description: 'Heavy duty inverter power backup installation with copper lugs and segregated emergency lines.',
+      mediaType: 'PHOTO',
+      storageProvider: 'CLOUDINARY',
+      mediaUrl: 'https://images.unsplash.com/photo-1508873696983-2df57046475a?auto=format&fit=crop&w=1200&q=80',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1508873696983-2df57046475a?auto=format&fit=crop&w=600&q=80',
+      category: 'Inverter & Battery',
+      location: 'Suryabinayak, Bhaktapur',
+      isPublished: true,
+      sortOrder: 3,
+    },
+    {
+      title: 'Chemical Earthing Pit Installation & Ground Resistance Testing',
+      description: 'Deep grounding pit excavation, copper bonded electrode rod installation with conductive backfill compound.',
+      mediaType: 'PHOTO',
+      storageProvider: 'CLOUDINARY',
+      mediaUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f6?auto=format&fit=crop&w=1200&q=80',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1541888946425-d0fbb18f15f6?auto=format&fit=crop&w=600&q=80',
+      category: 'Earthing Pit',
+      location: 'Lazimpat, Kathmandu',
+      isPublished: true,
+      sortOrder: 4,
+    },
+    {
+      title: 'Distribution Board 12-Way Double Door MCB & RCCB Dressing',
+      description: 'Replacing old fuse cutouts with Schneider Acti9 MCB and 30mA RCCB for human electric shock protection.',
+      mediaType: 'PHOTO',
+      storageProvider: 'CLOUDINARY',
+      mediaUrl: 'https://images.unsplash.com/photo-1544725121-be3bf52e2dc8?auto=format&fit=crop&w=1200&q=80',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1544725121-be3bf52e2dc8?auto=format&fit=crop&w=600&q=80',
+      category: 'Distribution Board',
+      location: 'Koteshwor, Kathmandu',
+      isPublished: true,
+      sortOrder: 5,
+    },
+    {
+      title: 'Modern LED False Ceiling Profile & Magnetic Track Installation',
+      description: 'Recessed aluminum profile light channels with warm white 3000K strips and concealed driver setup.',
+      mediaType: 'VIDEO',
+      storageProvider: 'CLOUDFLARE_R2',
+      mediaUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyBlazes.mp4',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&w=600&q=80',
+      category: 'Lighting & Fixtures',
+      location: 'Sanepa, Lalitpur',
+      isPublished: true,
+      sortOrder: 6,
+    },
+    {
+      title: 'Commercial Restaurant 3-Phase Commercial Load Balancing',
+      description: 'Phase balancing across commercial induction burners, chillers, and HVAC units.',
+      mediaType: 'PHOTO',
+      storageProvider: 'CLOUDINARY',
+      mediaUrl: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=1200&q=80',
+      thumbnailUrl: 'https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=600&q=80',
+      category: 'Commercial Automation',
+      location: 'Thamel, Kathmandu',
+      isPublished: true,
+      sortOrder: 7,
+    },
+  ];
+
+  await prisma.galleryItem.deleteMany({});
+  for (const item of galleryItems) {
+    await prisma.galleryItem.create({ data: item });
+  }
+
+  // 9. Create Initial Admin Notification
   await prisma.notification.create({
     data: {
       type: 'SYSTEM',
       title: 'VoltixNepal Platform Ready',
-      message: 'System initialized successfully with initial services, hero slides, and business settings for Sanjit Mishra.',
+      message: 'System initialized successfully with initial services, hero slides, gallery items, and business settings for Sanjit Mishra.',
       link: '/admin',
       isRead: false,
     },
