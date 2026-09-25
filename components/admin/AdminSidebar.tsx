@@ -21,6 +21,7 @@ import {
   X,
   Video,
   Award,
+  ScanSearch,
 } from 'lucide-react';
 import BrandLogo from '@/components/common/BrandLogo';
 
@@ -58,6 +59,7 @@ export default function AdminSidebar() {
     { label: 'FAQs', href: '/admin/faq', icon: HelpCircle },
     { label: 'Testimonials', href: '/admin/testimonials', icon: MessageSquareQuote },
     { label: 'Website Settings', href: '/admin/settings', icon: Settings },
+    { label: 'Track Order (Public)', href: '/admin/track-preview', icon: ScanSearch },
     { label: 'Audit Trail', href: '/admin/audit', icon: ShieldCheck },
   ];
 

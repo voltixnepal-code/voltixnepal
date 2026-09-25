@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Loader2,
   User,
+  ScanSearch,
 } from 'lucide-react';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
 import { generateWhatsAppUrl } from '@/lib/whatsapp';
@@ -154,6 +155,15 @@ export default function AdminRequestDetailPage({
         </Link>
 
         <div className="flex items-center gap-2">
+          <Link
+            href={`/track?code=${request?.requestId}`}
+            target="_blank"
+            className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
+          >
+            <ScanSearch className="w-3.5 h-3.5" />
+            <span>Preview Tracking</span>
+            <ExternalLink className="w-3 h-3" />
+          </Link>
           <button
             onClick={handleDelete}
             className="btn-secondary text-xs py-1.5 px-3 text-red-600 hover:bg-red-50 flex items-center gap-1.5"
