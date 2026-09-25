@@ -81,7 +81,8 @@ export async function GET(req: NextRequest) {
     let todayPaidCount = 0;
     let monthPaidCount = 0;
 
-    allRequests.forEach((r) => {
+    allRequests.forEach((reqItem) => {
+      const r = reqItem as any;
       const billed = Number(r.billedAmount || 0);
       const paid = Number(r.paidAmount || 0);
       totalBilled += billed;
