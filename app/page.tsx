@@ -70,8 +70,6 @@ export default async function HomePage() {
   return (
     <div>
       <HeroSlider slides={heroSlides} />
-      <ServicesGrid services={services} />
-      <WhyChooseUs />
       <AboutSnippet
         settings={{
           ownerName:        settings?.ownerName,
@@ -86,6 +84,8 @@ export default async function HomePage() {
           aboutBookBtnText: settings?.aboutBookBtnText,
         }}
       />
+      <ServicesGrid services={services} />
+      <WhyChooseUs />
       <TestimonialSection testimonials={testimonials} />
       <FaqAccordion faqs={faqs} />
       <BlogSnippet posts={blogPosts} />
