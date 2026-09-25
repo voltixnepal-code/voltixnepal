@@ -116,11 +116,11 @@ export default function Navbar({ settings }: NavbarProps) {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs w-full">
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-18 md:h-22">
+        <div className="flex items-center justify-between h-16 sm:h-20">
           
           {/* Brand Logo */}
-          <div className="shrink-0 mr-4 lg:mr-8">
-            <BrandLogo size="lg" href="/" />
+          <div className="shrink-0 mr-4 lg:mr-8 flex items-center">
+            <BrandLogo size="md" href="/" />
           </div>
 
           {/* Desktop Navigation Links */}
