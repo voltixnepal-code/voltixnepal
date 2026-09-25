@@ -11,6 +11,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import { auth, sendPasswordResetEmail } from '@/lib/firebase';
+import BrandLogo from '@/components/common/BrandLogo';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -38,8 +39,8 @@ export default function ForgotPasswordPage() {
     <div className="bg-slate-50 min-h-[calc(100vh-160px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-white rounded-lg border border-slate-200 p-8 shadow-sm space-y-6">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-lg bg-red-600 text-white flex items-center justify-center mx-auto mb-3 shadow-xs font-bold">
-            <Zap className="w-6 h-6 fill-current" />
+          <div className="flex justify-center mx-auto mb-3">
+            <BrandLogo variant="dark" size="md" href="/" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">
             Reset Password

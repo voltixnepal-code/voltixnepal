@@ -20,6 +20,7 @@ import {
   googleProvider,
 } from '@/lib/firebase';
 import GoogleOneTap from '@/components/auth/GoogleOneTap';
+import BrandLogo from '@/components/common/BrandLogo';
 
 export default function CustomerSignupPage() {
   const [name, setName] = useState('');
@@ -116,8 +117,8 @@ export default function CustomerSignupPage() {
 
       <div className="max-w-md w-full bg-white rounded-lg border border-slate-200 p-8 shadow-sm space-y-6">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-lg bg-red-600 text-white flex items-center justify-center mx-auto mb-3 shadow-xs font-bold">
-            <Zap className="w-6 h-6 fill-current" />
+          <div className="flex justify-center mx-auto mb-3">
+            <BrandLogo variant="dark" size="md" href="/" />
           </div>
           <h1 className="text-2xl font-bold text-slate-900">
             Create Customer Account
