@@ -35,7 +35,7 @@ export default function BrandLogo({
       ? '/logo (2).PNG'
       : isLight
       ? '/logo-white.png'
-      : '/logo (1).PNG';
+      : '/logo-dark.png';
 
   const logoContent = (
     <div className={`bg-transparent inline-flex items-center group select-none ${className}`}>
@@ -45,8 +45,8 @@ export default function BrandLogo({
         className={`${heightClasses} w-auto object-contain group-hover:scale-105 transition-transform duration-200`}
         onError={(e) => {
           const target = e.currentTarget;
-          if (target.src.indexOf('logo (1).PNG') === -1) {
-            target.src = '/logo (1).PNG';
+          if (target.src.indexOf('logo-dark.png') === -1 && !isLight) {
+            target.src = '/logo-dark.png';
           }
         }}
       />
