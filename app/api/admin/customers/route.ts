@@ -56,8 +56,8 @@ export async function GET(req: NextRequest) {
     const customerList = users.map((u) => {
       const cleanPhone = (u.phone || '').replace(/\D/g, '');
       const userReqs = phoneMap[cleanPhone] || u.requests || [];
-      const totalSpent = userReqs.reduce((sum, r) => sum + (Number(r.paidAmount) || 0), 0);
-      const totalBilled = userReqs.reduce((sum, r) => sum + (Number(r.billedAmount) || 0), 0);
+      const totalSpent = userReqs.reduce((sum, r: any) => sum + (Number(r.paidAmount) || 0), 0);
+      const totalBilled = userReqs.reduce((sum, r: any) => sum + (Number(r.billedAmount) || 0), 0);
 
       return {
         id: u.id,
@@ -79,8 +79,8 @@ export async function GET(req: NextRequest) {
       if (cleanPhone && !seenPhones.has(cleanPhone)) {
         seenPhones.add(cleanPhone);
         const reqs = phoneMap[cleanPhone] || [r];
-        const totalSpent = reqs.reduce((sum, req) => sum + (Number(req.paidAmount) || 0), 0);
-        const totalBilled = reqs.reduce((sum, req) => sum + (Number(req.billedAmount) || 0), 0);
+        const totalSpent = reqs.reduce((sum, req: any) => sum + (Number(req.paidAmount) || 0), 0);
+        const totalBilled = reqs.reduce((sum, req: any) => sum + (Number(req.billedAmount) || 0), 0);
 
         // Check if matches search query
         if (
