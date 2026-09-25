@@ -7,7 +7,6 @@ import AboutSnippet from '@/components/home/AboutSnippet';
 import TestimonialSection from '@/components/home/TestimonialSection';
 import FaqAccordion from '@/components/home/FaqAccordion';
 import BlogSnippet from '@/components/home/BlogSnippet';
-import CtaBanner from '@/components/home/CtaBanner';
 import {
   DEFAULT_HERO_SLIDES,
   DEFAULT_SERVICES,
@@ -90,10 +89,6 @@ export default async function HomePage() {
       <TestimonialSection testimonials={testimonials} />
       <FaqAccordion faqs={faqs} />
       <BlogSnippet posts={blogPosts} />
-      <CtaBanner
-        phone={settings?.phone}
-        whatsappNumber={settings?.whatsappNumber}
-      />
     </div>
   );
 }
