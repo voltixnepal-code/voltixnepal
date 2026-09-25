@@ -29,6 +29,11 @@ export const DEFAULT_SETTINGS = {
   aboutExperienceYears: 10,
   aboutProjectsDone: 1500,
   aboutHappyClients: 1200,
+  aboutHeadline: 'Experienced Hands-On Electrical Contractor in Kathmandu',
+  aboutBio1: 'Hello, I am {ownerName}, the founder and chief electrician at VoltixNepal. I specialize in providing dependable, safe, and modern electrical services for residential apartments, independent homes, and commercial offices across Kathmandu Valley.',
+  aboutBio2: 'Whether you are rewiring a building, diagnosing a recurring circuit breaker trip, installing an inverter backup, or dealing with an unexpected power short circuit, I ensure meticulous attention to detail and zero compromises on safety standards.',
+  aboutHighlights: '["House Wiring & Concealed Piping","Short Circuit Diagnostic & Megger Test","Inverter & Battery Wiring","Distribution Board Balancing"]',
+  aboutBookBtnText: 'Book a Service with Sanjit',
 };
 
 export const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {

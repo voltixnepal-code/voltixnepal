@@ -75,9 +75,16 @@ export default async function HomePage() {
       <WhyChooseUs />
       <AboutSnippet
         settings={{
-          ownerName: settings?.ownerName,
-          phone: settings?.phone,
-          whatsappNumber: settings?.whatsappNumber,
+          ownerName:        settings?.ownerName,
+          phone:            settings?.phone,
+          whatsappNumber:   settings?.whatsappNumber,
+          aboutOwnerPhoto:  settings?.aboutOwnerPhoto,
+          aboutOwnerTitle:  settings?.aboutOwnerTitle,
+          aboutHeadline:    settings?.aboutHeadline,
+          aboutBio1:        settings?.aboutBio1,
+          aboutBio2:        settings?.aboutBio2,
+          aboutHighlights:  settings?.aboutHighlights,
+          aboutBookBtnText: settings?.aboutBookBtnText,
         }}
       />
       <TestimonialSection testimonials={testimonials} />

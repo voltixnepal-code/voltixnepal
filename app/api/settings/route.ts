@@ -70,6 +70,11 @@ export async function PUT(req: NextRequest) {
         aboutExperienceYears: typeof body.aboutExperienceYears === 'number' ? body.aboutExperienceYears : (body.aboutExperienceYears ? parseInt(body.aboutExperienceYears, 10) : 10),
         aboutProjectsDone: typeof body.aboutProjectsDone === 'number' ? body.aboutProjectsDone : (body.aboutProjectsDone ? parseInt(body.aboutProjectsDone, 10) : 1500),
         aboutHappyClients: typeof body.aboutHappyClients === 'number' ? body.aboutHappyClients : (body.aboutHappyClients ? parseInt(body.aboutHappyClients, 10) : 1200),
+        aboutHeadline: body.aboutHeadline,
+        aboutBio1: body.aboutBio1,
+        aboutBio2: body.aboutBio2,
+        aboutHighlights: typeof body.aboutHighlights === 'string' ? body.aboutHighlights : (Array.isArray(body.aboutHighlights) ? JSON.stringify(body.aboutHighlights) : undefined),
+        aboutBookBtnText: body.aboutBookBtnText,
       } as any,
       create: {
         id: 'default_settings',

@@ -20,7 +20,10 @@ import {
   Eye,
   FileText,
   Phone,
-  RefreshCw
+  RefreshCw,
+  Plus,
+  Trash2,
+  Check
 } from 'lucide-react';
 import { adminFetch } from '@/lib/admin-fetch';
 
@@ -54,6 +57,11 @@ export default function AdminAboutCMSPage() {
     aboutExperienceYears: 10,
     aboutProjectsDone: 1500,
     aboutHappyClients: 1200,
+    aboutHeadline: 'Experienced Hands-On Electrical Contractor in Kathmandu',
+    aboutBio1: 'Hello, I am {ownerName}, the founder and chief electrician at VoltixNepal. I specialize in providing dependable, safe, and modern electrical services for residential apartments, independent homes, and commercial offices across Kathmandu Valley.',
+    aboutBio2: 'Whether you are rewiring a building, diagnosing a recurring circuit breaker trip, installing an inverter backup, or dealing with an unexpected power short circuit, I ensure meticulous attention to detail and zero compromises on safety standards.',
+    aboutHighlights: '["House Wiring & Concealed Piping","Short Circuit Diagnostic & Megger Test","Inverter & Battery Wiring","Distribution Board Balancing"]',
+    aboutBookBtnText: 'Book a Service with Sanjit',
   });
 
   useEffect(() => {
@@ -78,6 +86,11 @@ export default function AdminAboutCMSPage() {
             aboutExperienceYears: data.settings.aboutExperienceYears ?? prev.aboutExperienceYears,
             aboutProjectsDone: data.settings.aboutProjectsDone ?? prev.aboutProjectsDone,
             aboutHappyClients: data.settings.aboutHappyClients ?? prev.aboutHappyClients,
+            aboutHeadline: data.settings.aboutHeadline || prev.aboutHeadline,
+            aboutBio1: data.settings.aboutBio1 || prev.aboutBio1,
+            aboutBio2: data.settings.aboutBio2 || prev.aboutBio2,
+            aboutHighlights: data.settings.aboutHighlights || prev.aboutHighlights,
+            aboutBookBtnText: data.settings.aboutBookBtnText || prev.aboutBookBtnText,
           }));
         }
       } catch (err) {
@@ -88,6 +101,36 @@ export default function AdminAboutCMSPage() {
     }
     loadData();
   }, []);
+
+  // Highlights list parsed from JSON string
+  let highlightsList: string[] = [
+    'House Wiring & Concealed Piping',
+    'Short Circuit Diagnostic & Megger Test',
+    'Inverter & Battery Wiring',
+    'Distribution Board Balancing',
+  ];
+  try {
+    if (form.aboutHighlights) {
+      const parsed = JSON.parse(form.aboutHighlights);
+      if (Array.isArray(parsed) && parsed.length > 0) highlightsList = parsed;
+    }
+  } catch {}
+
+  const updateHighlight = (index: number, val: string) => {
+    const next = [...highlightsList];
+    next[index] = val;
+    setForm((prev) => ({ ...prev, aboutHighlights: JSON.stringify(next) }));
+  };
+
+  const addHighlight = () => {
+    const next = [...highlightsList, 'New Service Highlight'];
+    setForm((prev) => ({ ...prev, aboutHighlights: JSON.stringify(next) }));
+  };
+
+  const removeHighlight = (index: number) => {
+    const next = highlightsList.filter((_, i) => i !== index);
+    setForm((prev) => ({ ...prev, aboutHighlights: JSON.stringify(next) }));
+  };
 
   const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -478,6 +521,109 @@ export default function AdminAboutCMSPage() {
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Upload a high-quality photo of electrical equipment, workshop testing tools, or completed on-site project panel. Max file size: 95MB.
               </p>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 4: Homepage "About Founder & Services" Snippet */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-5">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-red-600" />
+              <h2 className="text-sm font-bold text-slate-900">Homepage "About Founder & Services" Section</h2>
+            </div>
+            <span className="text-[11px] font-semibold text-slate-600 bg-red-50 border border-red-200 text-red-700 px-2.5 py-0.5 rounded-full">
+              Homepage Live Snippet
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">Headline Title</label>
+              <input
+                type="text"
+                value={form.aboutHeadline || ''}
+                onChange={(e) => setForm({ ...form, aboutHeadline: e.target.value })}
+                placeholder="Experienced Hands-On Electrical Contractor in Kathmandu"
+                className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">Bio Paragraph 1 (Introduction)</label>
+                <textarea
+                  rows={4}
+                  value={form.aboutBio1 || ''}
+                  onChange={(e) => setForm({ ...form, aboutBio1: e.target.value })}
+                  placeholder="Hello, I am {ownerName}, the founder and chief electrician..."
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20"
+                />
+                <p className="text-[10px] text-slate-500">Tip: Use <code>{'{ownerName}'}</code> to dynamically insert the owner name.</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">Bio Paragraph 2 (Services & Commitment)</label>
+                <textarea
+                  rows={4}
+                  value={form.aboutBio2 || ''}
+                  onChange={(e) => setForm({ ...form, aboutBio2: e.target.value })}
+                  placeholder="Whether you are rewiring a building, diagnosing a recurring circuit breaker trip..."
+                  className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20"
+                />
+              </div>
+            </div>
+
+            {/* Service Highlights / Bullet points */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700">Key Highlights / Checkpoint Bullets</label>
+                <button
+                  type="button"
+                  onClick={addHighlight}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center gap-1"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Bullet</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {highlightsList.map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                    <Check className="w-4 h-4 text-red-600 shrink-0" />
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => updateHighlight(idx, e.target.value)}
+                      placeholder={`Highlight #${idx + 1}`}
+                      className="w-full text-xs bg-transparent border-0 focus:outline-none text-slate-800"
+                    />
+                    {highlightsList.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeHighlight(idx)}
+                        className="text-slate-400 hover:text-red-600 transition-colors p-1"
+                        title="Remove highlight"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Booking button text */}
+            <div className="space-y-1.5 pt-2">
+              <label className="block text-xs font-bold text-slate-700">Primary Booking Button Text</label>
+              <input
+                type="text"
+                value={form.aboutBookBtnText || ''}
+                onChange={(e) => setForm({ ...form, aboutBookBtnText: e.target.value })}
+                placeholder="Book a Service with Sanjit"
+                className="w-full sm:w-1/2 px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-red-600/20"
+              />
             </div>
           </div>
         </div>
