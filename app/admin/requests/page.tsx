@@ -12,8 +12,10 @@ import {
   ExternalLink,
   Calendar,
   AlertCircle,
+  CreditCard,
 } from 'lucide-react';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
+import { CustomerLoyaltyBadge, PaymentBadge } from '@/components/admin/CustomerLoyaltyBadge';
 
 export default function AdminRequestsPage() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -57,10 +59,10 @@ export default function AdminRequestsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Service Requests Management
+            Service Requests & Billing Management
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            View, filter, dispatch, and track customer electrical orders
+            View orders, customer repeat history (x1, x2, x3...), payments, and technician dispatch
           </p>
         </div>
 
@@ -102,7 +104,7 @@ export default function AdminRequestsPage() {
               className="form-input text-xs py-2 bg-white"
             >
               <option value="ALL">All Statuses</option>
-              <option value="NEW">New</option>
+              <option value="NEW">New (Unreviewed)</option>
               <option value="CONTACTED">Contacted</option>
               <option value="CONFIRMED">Confirmed</option>
               <option value="IN_PROGRESS">In Progress</option>
@@ -151,9 +153,9 @@ export default function AdminRequestsPage() {
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-bold">
                   <th className="py-3.5 px-4">Request ID</th>
-                  <th className="py-3.5 px-4">Customer</th>
+                  <th className="py-3.5 px-4">Customer & History</th>
                   <th className="py-3.5 px-4">Service</th>
-                  <th className="py-3.5 px-4">Urgency</th>
+                  <th className="py-3.5 px-4">Billing & Payment</th>
                   <th className="py-3.5 px-4">Location</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
@@ -167,11 +169,18 @@ export default function AdminRequestsPage() {
                   >
                     <td className="py-3.5 px-4 font-mono font-bold text-red-600">
                       {req.requestId}
+                      <div className="mt-1">
+                        <UrgencyBadge urgency={req.urgency} />
+                      </div>
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900">
-                        {req.customerName}
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-slate-900">
+                          {req.customerName}
+                        </span>
+                        {/* Repeat Customer Work Multiplier Badge */}
+                        <CustomerLoyaltyBadge count={req.customerRequestCount} />
                       </div>
                       <div className="text-[11px] font-mono text-slate-500 flex items-center gap-2 mt-0.5">
                         <a
@@ -193,7 +202,16 @@ export default function AdminRequestsPage() {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <UrgencyBadge urgency={req.urgency} />
+                      <PaymentBadge
+                        status={req.paymentStatus}
+                        amount={req.paidAmount || req.billedAmount}
+                        method={req.paymentMethod}
+                      />
+                      {req.billedAmount > 0 && (
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          Billed: Rs. {Number(req.billedAmount).toLocaleString('en-IN')}
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -213,9 +231,9 @@ export default function AdminRequestsPage() {
                     <td className="py-3.5 px-4 text-right">
                       <Link
                         href={`/admin/requests/${req.id}`}
-                        className="btn-secondary text-[11px] py-1 px-3"
+                        className="btn-secondary text-[11px] py-1 px-3 font-semibold hover:bg-slate-100"
                       >
-                        Manage
+                        Manage & Bill
                       </Link>
                     </td>
                   </tr>

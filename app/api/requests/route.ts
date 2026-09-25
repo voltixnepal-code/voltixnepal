@@ -192,7 +192,36 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json({ success: true, requests });
+    const allUserRequests = await prisma.serviceRequest.findMany({
+      select: { customerPhone: true, customerEmail: true },
+    });
+
+    const phoneCountMap: Record<string, number> = {};
+    const emailCountMap: Record<string, number> = {};
+
+    allUserRequests.forEach((r) => {
+      const cleanPhone = (r.customerPhone || '').replace(/\D/g, '');
+      if (cleanPhone) {
+        phoneCountMap[cleanPhone] = (phoneCountMap[cleanPhone] || 0) + 1;
+      }
+      const cleanEmail = (r.customerEmail || '').trim().toLowerCase();
+      if (cleanEmail) {
+        emailCountMap[cleanEmail] = (emailCountMap[cleanEmail] || 0) + 1;
+      }
+    });
+
+    const decoratedRequests = requests.map((r) => {
+      const cleanPhone = (r.customerPhone || '').replace(/\D/g, '');
+      const cleanEmail = (r.customerEmail || '').trim().toLowerCase();
+      const count =
+        phoneCountMap[cleanPhone] || emailCountMap[cleanEmail] || 1;
+      return {
+        ...r,
+        customerRequestCount: count,
+      };
+    });
+
+    return NextResponse.json({ success: true, requests: decoratedRequests });
   } catch (error: any) {
     console.error('Error fetching service requests:', error);
     return NextResponse.json(

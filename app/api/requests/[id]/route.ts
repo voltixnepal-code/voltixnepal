@@ -22,7 +22,28 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ success: true, request });
+    // Find all previous requests for this customer to calculate loyalty count and history
+    const customerRequests = await prisma.serviceRequest.findMany({
+      where: {
+        OR: [
+          { customerPhone: request.customerPhone },
+          ...(request.customerEmail ? [{ customerEmail: request.customerEmail }] : []),
+          ...(request.userId ? [{ userId: request.userId }] : []),
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const customerRequestCount = customerRequests.length || 1;
+
+    return NextResponse.json({
+      success: true,
+      request: {
+        ...request,
+        customerRequestCount,
+      },
+      customerHistory: customerRequests,
+    });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, message: error.message },
@@ -58,6 +79,33 @@ export async function PATCH(
       );
     }
 
+    const billedAmount =
+      body.billedAmount !== undefined
+        ? Number(body.billedAmount)
+        : existing.billedAmount;
+
+    let paidAmount =
+      body.paidAmount !== undefined
+        ? Number(body.paidAmount)
+        : existing.paidAmount;
+
+    let paymentStatus =
+      body.paymentStatus !== undefined
+        ? body.paymentStatus
+        : existing.paymentStatus;
+
+    // Auto-sync paid amount if paymentStatus is marked PAID without paidAmount
+    if (paymentStatus === 'PAID' && (paidAmount === 0 || paidAmount === null) && billedAmount && billedAmount > 0) {
+      paidAmount = billedAmount;
+    }
+
+    let paidAt = existing.paidAt;
+    if (paymentStatus === 'PAID' && !paidAt) {
+      paidAt = new Date();
+    } else if (paymentStatus === 'UNPAID') {
+      paidAt = null;
+    }
+
     const updated = await prisma.serviceRequest.update({
       where: { id: existing.id },
       data: {
@@ -70,17 +118,37 @@ export async function PATCH(
           body.adminAssigned !== undefined
             ? body.adminAssigned
             : existing.adminAssigned,
+        billedAmount,
+        paidAmount,
+        paymentStatus,
+        paymentMethod:
+          body.paymentMethod !== undefined
+            ? body.paymentMethod
+            : existing.paymentMethod,
+        paymentNotes:
+          body.paymentNotes !== undefined
+            ? body.paymentNotes
+            : existing.paymentNotes,
+        paidAt,
       },
     });
 
     // Audit log
+    const changes: string[] = [];
+    if (body.status !== undefined && body.status !== existing.status) {
+      changes.push(`Status: ${existing.status} -> ${updated.status}`);
+    }
+    if (body.billedAmount !== undefined || body.paidAmount !== undefined || body.paymentStatus !== undefined) {
+      changes.push(`Billing: Rs. ${billedAmount} (Paid: Rs. ${paidAmount}, ${paymentStatus})`);
+    }
+
     await prisma.auditLog.create({
       data: {
         adminEmail: auth.email || 'admin@voltixnepal.com',
-        action: `UPDATE_REQUEST_STATUS: ${existing.status} -> ${updated.status}`,
+        action: `UPDATE_REQUEST: #${updated.requestId}`,
         entityType: 'ServiceRequest',
         entityId: updated.id,
-        details: `Updated request #${updated.requestId}`,
+        details: changes.join(' | ') || `Updated request #${updated.requestId}`,
       },
     });
 

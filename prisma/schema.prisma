@@ -48,6 +48,15 @@ model ServiceRequest {
   status           String   @default("NEW") // "NEW", "CONTACTED", "CONFIRMED", "IN_PROGRESS", "COMPLETED", "CANCELLED"
   internalNotes    String?
   adminAssigned    String?
+
+  // Financial & Billing Tracking
+  billedAmount     Float?   @default(0)
+  paidAmount       Float?   @default(0)
+  paymentStatus    String   @default("UNPAID") // "UNPAID", "PAID", "PARTIAL"
+  paymentMethod    String?  @default("CASH")   // "CASH", "ESEWA", "KHALTI", "BANK_TRANSFER", "FONEPAY"
+  paymentNotes     String?
+  paidAt           DateTime?
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }

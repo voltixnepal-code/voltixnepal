@@ -20,9 +20,14 @@ import {
   Loader2,
   User,
   ScanSearch,
+  Wallet,
+  Receipt,
+  DollarSign,
+  History,
+  Check,
 } from 'lucide-react';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
-import { generateWhatsAppUrl } from '@/lib/whatsapp';
+import { CustomerLoyaltyBadge, PaymentBadge } from '@/components/admin/CustomerLoyaltyBadge';
 import { adminFetch } from '@/lib/admin-fetch';
 
 export default function AdminRequestDetailPage({
@@ -31,9 +36,18 @@ export default function AdminRequestDetailPage({
   params: { id: string };
 }) {
   const [request, setRequest] = useState<any>(null);
+  const [customerHistory, setCustomerHistory] = useState<any[]>([]);
   const [status, setStatus] = useState('NEW');
   const [internalNotes, setInternalNotes] = useState('');
   const [adminAssigned, setAdminAssigned] = useState('Sanjit Mishra');
+
+  // Financial & Billing State
+  const [billedAmount, setBilledAmount] = useState<number | string>('');
+  const [paidAmount, setPaidAmount] = useState<number | string>('');
+  const [paymentStatus, setPaymentStatus] = useState('UNPAID');
+  const [paymentMethod, setPaymentMethod] = useState('CASH');
+  const [paymentNotes, setPaymentNotes] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -44,10 +58,18 @@ export default function AdminRequestDetailPage({
     try {
       const res = await adminFetch(`/api/requests/${params.id}`);
       if (res.ok && res.data?.success && res.data?.request) {
-        setRequest(res.data.request);
-        setStatus(res.data.request.status);
-        setInternalNotes(res.data.request.internalNotes || '');
-        setAdminAssigned(res.data.request.adminAssigned || 'Sanjit Mishra');
+        const req = res.data.request;
+        setRequest(req);
+        setCustomerHistory(res.data.customerHistory || []);
+        setStatus(req.status);
+        setInternalNotes(req.internalNotes || '');
+        setAdminAssigned(req.adminAssigned || 'Sanjit Mishra');
+
+        setBilledAmount(req.billedAmount || '');
+        setPaidAmount(req.paidAmount || '');
+        setPaymentStatus(req.paymentStatus || 'UNPAID');
+        setPaymentMethod(req.paymentMethod || 'CASH');
+        setPaymentNotes(req.paymentNotes || '');
       }
     } catch (err) {
       console.error(err);
@@ -70,12 +92,17 @@ export default function AdminRequestDetailPage({
           status,
           internalNotes,
           adminAssigned,
+          billedAmount: billedAmount === '' ? 0 : Number(billedAmount),
+          paidAmount: paidAmount === '' ? 0 : Number(paidAmount),
+          paymentStatus,
+          paymentMethod,
+          paymentNotes,
         }),
       });
 
       if (res.ok && res.data?.success) {
         setRequest(res.data.request);
-        setStatusMsg('Request updated successfully.');
+        setStatusMsg('Request & billing details updated successfully.');
       } else {
         throw new Error(res.error || 'Failed to update request.');
       }
@@ -83,6 +110,16 @@ export default function AdminRequestDetailPage({
       setStatusMsg(`Error: ${err.message}`);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleMarkFullPaid = () => {
+    const amount = Number(billedAmount) || Number(paidAmount) || 0;
+    if (amount > 0) {
+      setPaidAmount(amount);
+      setPaymentStatus('PAID');
+    } else {
+      setPaymentStatus('PAID');
     }
   };
 
@@ -136,11 +173,12 @@ export default function AdminRequestDetailPage({
           `${request.address}, ${request.city}`
         )}`;
 
-  // Direct WhatsApp link to the customer
   const customerWhatsAppNumber = request.customerPhone.replace(/[^0-9]/g, '');
   const customerWhatsAppLink = `https://wa.me/${customerWhatsAppNumber}?text=${encodeURIComponent(
     `Hello ${request.customerName}, this is Sanjit Mishra from VoltixNepal regarding your electrical service request #${request.requestId}.`
   )}`;
+
+  const balanceDue = Math.max(0, Number(billedAmount || 0) - Number(paidAmount || 0));
 
   return (
     <div className="space-y-6">
@@ -161,7 +199,7 @@ export default function AdminRequestDetailPage({
             className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
           >
             <ScanSearch className="w-3.5 h-3.5" />
-            <span>Preview Tracking</span>
+            <span>Customer Track Preview</span>
             <ExternalLink className="w-3 h-3" />
           </Link>
           <button
@@ -199,10 +237,11 @@ export default function AdminRequestDetailPage({
           <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-sm font-extrabold text-red-600 bg-red-50 px-2.5 py-0.5 rounded border border-red-200">
                     {request.requestId}
                   </span>
+                  <CustomerLoyaltyBadge count={request.customerRequestCount} />
                   <UrgencyBadge urgency={request.urgency} />
                   <StatusBadge status={request.status} />
                 </div>
@@ -232,11 +271,206 @@ export default function AdminRequestDetailPage({
             {request.additionalNotes && (
               <div>
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                  Customer Notes
+                  Customer Additional Notes
                 </h3>
                 <p className="text-xs text-slate-700 italic">
                   "{request.additionalNotes}"
                 </p>
+              </div>
+            )}
+          </div>
+
+          {/* Dedicated Financial Billing & Payment Card */}
+          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-emerald-600 text-white shadow-xs">
+                  <Wallet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Customer Payment & Billing
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Track what the customer paid, amount charged, and payment method
+                  </p>
+                </div>
+              </div>
+
+              <PaymentBadge
+                status={paymentStatus}
+                amount={Number(paidAmount) || Number(billedAmount)}
+                method={paymentMethod}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="form-label text-xs font-bold text-slate-700">
+                  Total Billed Amount (NPR / Rs.)
+                </label>
+                <div className="relative mt-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+                    Rs.
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={billedAmount}
+                    onChange={(e) => setBilledAmount(e.target.value)}
+                    placeholder="e.g. 1500"
+                    className="form-input pl-10 text-xs font-bold text-slate-900"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label text-xs font-bold text-slate-700">
+                  Amount Paid / Received (NPR / Rs.)
+                </label>
+                <div className="relative mt-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+                    Rs.
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(e.target.value)}
+                    placeholder="e.g. 1500"
+                    className="form-input pl-10 text-xs font-bold text-emerald-700"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label text-xs font-bold text-slate-700">
+                  Payment Status
+                </label>
+                <select
+                  value={paymentStatus}
+                  onChange={(e) => setPaymentStatus(e.target.value)}
+                  className="form-input text-xs font-bold mt-1 bg-white"
+                >
+                  <option value="UNPAID">UNPAID (Pending Payment)</option>
+                  <option value="PAID">PAID (Full Payment Cleared)</option>
+                  <option value="PARTIAL">PARTIAL (Advance / Deposit)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label text-xs font-bold text-slate-700">
+                  Payment Method
+                </label>
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="form-input text-xs font-semibold mt-1 bg-white"
+                >
+                  <option value="CASH">Cash in Hand</option>
+                  <option value="ESEWA">eSewa</option>
+                  <option value="KHALTI">Khalti</option>
+                  <option value="FONEPAY">Fonepay QR</option>
+                  <option value="BANK_TRANSFER">Bank Transfer / ConnectIPS</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="form-label text-xs font-semibold text-slate-700">
+                Payment & Receipt Notes / Reference ID
+              </label>
+              <input
+                type="text"
+                value={paymentNotes}
+                onChange={(e) => setPaymentNotes(e.target.value)}
+                placeholder="e.g. Paid via eSewa Txn# 9825870047, parts cost included Rs. 400"
+                className="form-input text-xs mt-1"
+              />
+            </div>
+
+            {/* Quick Helper Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <div className="text-xs">
+                {balanceDue > 0 ? (
+                  <span className="text-red-600 font-bold">
+                    Remaining Unpaid Balance: Rs. {balanceDue.toLocaleString('en-IN')}
+                  </span>
+                ) : (
+                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5" /> No Pending Balance
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleMarkFullPaid}
+                className="text-xs px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 transition-colors"
+              >
+                Mark Full Payment Received
+              </button>
+            </div>
+          </div>
+
+          {/* Customer Booking History (Repeat Client Record) */}
+          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <History className="w-4 h-4 text-blue-600" />
+                <h3 className="text-sm font-bold text-slate-900">
+                  Customer Service History with VoltixNepal
+                </h3>
+              </div>
+              <CustomerLoyaltyBadge count={request.customerRequestCount} />
+            </div>
+
+            {customerHistory.length <= 1 ? (
+              <p className="text-xs text-slate-500">
+                This is the customer's 1st registered service booking with Voltix Nepal.
+              </p>
+            ) : (
+              <div className="space-y-2 text-xs">
+                <p className="text-xs font-semibold text-slate-700">
+                  This customer has completed / booked <strong>{customerHistory.length} service requests</strong>:
+                </p>
+                <div className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
+                  {customerHistory.map((hist) => (
+                    <div
+                      key={hist.id}
+                      className={`p-3 flex items-center justify-between gap-3 ${
+                        hist.id === request.id ? 'bg-red-50/40 font-semibold' : 'bg-white'
+                      }`}
+                    >
+                      <div>
+                        <div className="font-mono text-red-600 font-bold">
+                          {hist.requestId}
+                        </div>
+                        <div className="text-slate-800 text-xs">
+                          {hist.serviceName}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <PaymentBadge
+                          status={hist.paymentStatus}
+                          amount={hist.paidAmount || hist.billedAmount}
+                          method={hist.paymentMethod}
+                        />
+                        <StatusBadge status={hist.status} />
+                        {hist.id !== request.id && (
+                          <Link
+                            href={`/admin/requests/${hist.id}`}
+                            className="btn-secondary text-[11px] py-1 px-2.5"
+                          >
+                            View
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -309,8 +543,11 @@ export default function AdminRequestDetailPage({
                   <User className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-bold text-slate-900 text-sm">
-                    {request.customerName}
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900 text-sm">
+                      {request.customerName}
+                    </span>
+                    <CustomerLoyaltyBadge count={request.customerRequestCount} />
                   </div>
                   <div className="text-[11px] text-slate-500">
                     Prefers {request.preferredContact}
@@ -354,12 +591,12 @@ export default function AdminRequestDetailPage({
           {/* Status & Assignment Box */}
           <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
-              Update Request Status
+              Update Request & Save
             </h3>
 
             <div className="space-y-3">
               <div>
-                <label className="form-label text-xs">Status</label>
+                <label className="form-label text-xs">Job Status</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
@@ -385,12 +622,12 @@ export default function AdminRequestDetailPage({
               </div>
 
               <div>
-                <label className="form-label text-xs">Internal Notes</label>
+                <label className="form-label text-xs">Internal Notes / Work Log</label>
                 <textarea
                   rows={3}
                   value={internalNotes}
                   onChange={(e) => setInternalNotes(e.target.value)}
-                  placeholder="e.g. Visited site at 10 AM, identified loose neutral terminal, quoted Rs. 800..."
+                  placeholder="e.g. Visited site at 10 AM, identified short circuit in bedroom 2..."
                   className="form-input text-xs"
                 />
               </div>
@@ -406,7 +643,7 @@ export default function AdminRequestDetailPage({
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                <span>Save Changes</span>
+                <span>Save Request & Billing</span>
               </button>
             </div>
           </div>

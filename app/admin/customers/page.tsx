@@ -9,7 +9,11 @@ import {
   Calendar,
   ClipboardList,
   RefreshCw,
+  Wallet,
+  ShieldCheck,
+  User,
 } from 'lucide-react';
+import { CustomerLoyaltyBadge } from '@/components/admin/CustomerLoyaltyBadge';
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<any[]>([]);
@@ -46,10 +50,10 @@ export default function AdminCustomersPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Customer Directory
+            Customer Directory & Loyalty
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Registered customer accounts and service booking histories
+            Registered accounts, guest bookings, repeat client history (x1, x2, x3...), and lifetime spending
           </p>
         </div>
 
@@ -83,36 +87,70 @@ export default function AdminCustomersPage() {
             No customer records found.
           </div>
         ) : (
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-bold">
-                <th className="py-3 px-4">Customer Name</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Phone</th>
-                <th className="py-3 px-4">Total Bookings</th>
-                <th className="py-3 px-4">Joined On</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {customers.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="py-3 px-4 font-bold text-slate-900">{c.name}</td>
-                  <td className="py-3 px-4 text-slate-600">{c.email}</td>
-                  <td className="py-3 px-4 font-mono text-slate-700">
-                    {c.phone || '—'}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded bg-red-50 text-red-700 font-bold text-xs border border-red-200">
-                      {c._count?.requests || 0} Requests
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-slate-400 text-[11px]">
-                    {new Date(c.createdAt).toLocaleDateString()}
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider text-[11px] font-bold">
+                  <th className="py-3 px-4">Customer Name & Loyalty</th>
+                  <th className="py-3 px-4">Phone</th>
+                  <th className="py-3 px-4">Email</th>
+                  <th className="py-3 px-4">Total Bookings</th>
+                  <th className="py-3 px-4">Total Paid (Revenue)</th>
+                  <th className="py-3 px-4">Type</th>
+                  <th className="py-3 px-4">Date Added</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {customers.map((c) => (
+                  <tr key={c.id} className="hover:bg-slate-50">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">{c.name}</span>
+                        {/* Repeat Customer Work Multiplier Badge */}
+                        <CustomerLoyaltyBadge count={c.bookingCount} />
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4 font-mono text-slate-700">
+                      {c.phone ? (
+                        <a href={`tel:${c.phone}`} className="hover:text-red-600">
+                          {c.phone}
+                        </a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-600">
+                      {c.email}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="font-bold text-slate-900">
+                        {c.bookingCount || 1} {c.bookingCount === 1 ? 'Job' : 'Jobs'}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Rs. {(c.totalSpent || 0).toLocaleString('en-IN')}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {c.isRegistered ? (
+                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200">
+                          Registered Account
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-semibold">
+                          Direct Booking
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-400 text-[11px]">
+                      {new Date(c.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

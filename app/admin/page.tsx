@@ -15,8 +15,14 @@ import {
   MessageSquare,
   MapPin,
   RefreshCw,
+  DollarSign,
+  TrendingUp,
+  Calendar,
+  Wallet,
+  Receipt,
 } from 'lucide-react';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
+import { CustomerLoyaltyBadge, PaymentBadge } from '@/components/admin/CustomerLoyaltyBadge';
 
 export default function AdminDashboardOverview() {
   const [data, setData] = useState<any>(null);
@@ -50,8 +56,11 @@ export default function AdminDashboardOverview() {
   }
 
   const stats = data?.stats || {};
+  const earnings = data?.earnings || {};
   const recentRequests = data?.recentRequests || [];
   const recentAudit = data?.recentAuditLogs || [];
+
+  const formatNpr = (val: number) => `Rs. ${(val || 0).toLocaleString('en-IN')}`;
 
   return (
     <div className="space-y-8">
@@ -59,10 +68,10 @@ export default function AdminDashboardOverview() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Electrical Operations Overview
+            Electrical Operations & Revenue Dashboard
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time status of service requests, customer inquiries, and bookings
+            Real-time status of earnings, service requests, and customer repeat bookings
           </p>
         </div>
 
@@ -75,7 +84,88 @@ export default function AdminDashboardOverview() {
         </button>
       </div>
 
-      {/* KPI Cards */}
+      {/* Financial Revenue & Earnings Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Wallet className="w-4 h-4 text-emerald-600" />
+            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              Earnings & Revenue Performance
+            </h2>
+          </div>
+          <span className="text-[11px] font-semibold text-slate-500">
+            Nepali Rupee (NPR / Rs.)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Daily Earnings */}
+          <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 p-5 rounded-xl border border-emerald-200 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-emerald-800">Today's Earnings</span>
+              <div className="p-2 rounded-lg bg-emerald-600 text-white shadow-xs">
+                <DollarSign className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl font-extrabold text-slate-900 mt-2">
+              {formatNpr(earnings.dailyEarnings)}
+            </div>
+            <div className="text-[11px] text-emerald-700 font-semibold mt-1 flex items-center gap-1">
+              <span>{earnings.todayPaidCount || 0} collections today</span>
+            </div>
+          </div>
+
+          {/* Weekly Earnings */}
+          <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/5 p-5 rounded-xl border border-blue-200 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-blue-800">Weekly Earnings</span>
+              <div className="p-2 rounded-lg bg-blue-600 text-white shadow-xs">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl font-extrabold text-slate-900 mt-2">
+              {formatNpr(earnings.weeklyEarnings)}
+            </div>
+            <div className="text-[11px] text-blue-700 font-semibold mt-1">
+              Current Week Collections
+            </div>
+          </div>
+
+          {/* Monthly Earnings */}
+          <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/5 p-5 rounded-xl border border-purple-200 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-purple-800">Monthly Earnings</span>
+              <div className="p-2 rounded-lg bg-purple-600 text-white shadow-xs">
+                <Calendar className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl font-extrabold text-slate-900 mt-2">
+              {formatNpr(earnings.monthlyEarnings)}
+            </div>
+            <div className="text-[11px] text-purple-700 font-semibold mt-1">
+              This Month ({earnings.monthPaidCount || 0} jobs paid)
+            </div>
+          </div>
+
+          {/* Total Lifetime Earnings */}
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-5 rounded-xl border border-slate-700 shadow-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-300">Total Lifetime Earnings</span>
+              <div className="p-2 rounded-lg bg-red-600 text-white shadow-xs">
+                <Receipt className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl font-extrabold text-white mt-2">
+              {formatNpr(earnings.totalEarnings)}
+            </div>
+            <div className="text-[11px] text-amber-300 font-medium mt-1">
+              Pending Receivable: {formatNpr(earnings.pendingReceivable)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Operational KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-lg border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
@@ -151,10 +241,10 @@ export default function AdminDashboardOverview() {
           <div className="p-5 border-b border-slate-200 flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold text-slate-900">
-                Recent Service Requests
+                Recent Service Requests & Billing
               </h2>
               <p className="text-xs text-slate-500">
-                Latest customer submissions with direct action shortcuts
+                Customer submissions with loyalty history (x1, x2, x3...) & payment tracking
               </p>
             </div>
             <Link
@@ -177,22 +267,24 @@ export default function AdminDashboardOverview() {
                   key={req.id}
                   className="p-5 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                 >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono font-bold text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">
                         {req.requestId}
                       </span>
                       <span className="font-bold text-sm text-slate-900">
                         {req.customerName}
                       </span>
+                      {/* Repeat Work Multiplier Badge (e.g. x1, x2, x3...) */}
+                      <CustomerLoyaltyBadge count={req.customerRequestCount} />
                       <UrgencyBadge urgency={req.urgency} />
                     </div>
 
-                    <div className="text-xs text-slate-700 font-medium">
-                      {req.serviceName}
+                    <div className="text-xs text-slate-700 font-medium flex items-center gap-2">
+                      <span>{req.serviceName}</span>
                     </div>
 
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-red-500" />
                         {req.address}
@@ -201,6 +293,13 @@ export default function AdminDashboardOverview() {
                       <span className="font-mono text-slate-700 font-semibold">
                         {req.customerPhone}
                       </span>
+                      <span>•</span>
+                      {/* Customer Payment Status */}
+                      <PaymentBadge
+                        status={req.paymentStatus}
+                        amount={req.paidAmount || req.billedAmount}
+                        method={req.paymentMethod}
+                      />
                     </div>
                   </div>
 
@@ -208,9 +307,9 @@ export default function AdminDashboardOverview() {
                     <StatusBadge status={req.status} />
                     <Link
                       href={`/admin/requests/${req.id}`}
-                      className="btn-secondary text-xs py-1.5 px-3"
+                      className="btn-secondary text-xs py-1.5 px-3 font-semibold hover:bg-slate-100"
                     >
-                      Manage
+                      Manage & Bill
                     </Link>
                   </div>
                 </div>
