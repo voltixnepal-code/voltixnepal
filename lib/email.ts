@@ -434,3 +434,170 @@ export async function sendCustomerConfirmationEmail(
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * 3. CUSTOMER STATUS UPDATE & TECHNICIAN DISPATCH EMAIL
+ * Triggered when Admin updates status or assigns a technician
+ */
+export async function sendStatusUpdateEmail(
+  request: {
+    requestId: string;
+    customerName: string;
+    customerEmail?: string | null;
+    serviceName: string;
+    status: string;
+    internalNotes?: string | null;
+    adminAssigned?: string | null;
+    address: string;
+  },
+  businessSettings?: { phone?: string; whatsappNumber?: string }
+): Promise<{ success: boolean; error?: string }> {
+  if (!request.customerEmail) {
+    return { success: true };
+  }
+
+  const transporter = getTransporter();
+  const from = process.env.SMTP_FROM || `"VoltixNepal Service" <voltixnepal@gmail.com>`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';
+  const businessPhone = businessSettings?.phone || '+977 9825870047';
+  const trackingUrl = `${appUrl}/track?code=${encodeURIComponent(request.requestId)}`;
+
+  const statusDisplayMap: Record<string, { label: string; color: string; desc: string }> = {
+    NEW: { label: 'Request Received', color: '#2563eb', desc: 'Your request has been received and is awaiting technician dispatch review.' },
+    CONTACTED: { label: 'Technician Contacted', color: '#0284c7', desc: 'Our team has reached out to verify service details and timing.' },
+    CONFIRMED: { label: 'Order Confirmed', color: '#16a34a', desc: 'Your service appointment is confirmed. Technician is scheduled.' },
+    IN_PROGRESS: { label: 'Technician Dispatched / In Progress', color: '#d97706', desc: 'Technician is actively en-route or performing electrical work on-site.' },
+    COMPLETED: { label: 'Work Completed & Verified', color: '#16a34a', desc: 'Electrical service work has been completed and safety tested.' },
+    CANCELLED: { label: 'Cancelled', color: '#dc2626', desc: 'This service request was cancelled.' },
+  };
+
+  const currentStatus = statusDisplayMap[request.status] || {
+    label: request.status,
+    color: '#0f172a',
+    desc: 'Status updated by VoltixNepal administration.',
+  };
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Request #${request.requestId} Status Update</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 580px; width: 100%; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; text-align: left;">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 24px 30px; border-bottom: 1px solid #f1f5f9; background-color: #ffffff;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td>
+                    <div style="font-size: 22px; font-weight: 800; color: #0f172a;">
+                      Voltix<span style="color: #dc2626;">Nepal</span>
+                    </div>
+                    <div style="font-size: 11px; font-weight: 600; color: #64748b; margin-top: 2px;">
+                      Order Status & Technician Tracking
+                    </div>
+                  </td>
+                  <td align="right">
+                    <span style="display: inline-block; padding: 5px 12px; font-size: 12px; font-weight: 700; color: ${currentStatus.color}; background-color: #f8fafc; border: 1px solid ${currentStatus.color}40; border-radius: 20px;">
+                      ● ${currentStatus.label}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Main Status Info -->
+          <tr>
+            <td style="padding: 24px 30px 10px;">
+              <div style="font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">
+                Order Update #${request.requestId}
+              </div>
+              <h1 style="margin: 6px 0 0; font-size: 18px; font-weight: 800; color: #0f172a;">
+                Hello ${request.customerName}, your service status has been updated:
+              </h1>
+              <p style="margin: 8px 0 0; font-size: 14px; color: #334155; line-height: 1.5;">
+                ${currentStatus.desc}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Technician & Details Card -->
+          <tr>
+            <td style="padding: 10px 30px 20px;">
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 140px;">Service:</td>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">${request.serviceName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b;">Current Status:</td>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: ${currentStatus.color};">${currentStatus.label}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b;">Assigned Technician:</td>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">
+                      ${request.adminAssigned || 'Sanjit Mishra (Lead Electrician)'}
+                    </td>
+                  </tr>
+                  ${request.internalNotes ? `
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b; vertical-align: top;">Technician Note:</td>
+                    <td style="padding: 6px 0; font-size: 13px; color: #334155;">${request.internalNotes}</td>
+                  </tr>
+                  ` : ''}
+                </table>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Track Online CTA Button -->
+          <tr>
+            <td style="padding: 0 30px 24px; text-align: center;">
+              <a href="${trackingUrl}" style="display: inline-block; background-color: #dc2626; color: #ffffff; font-size: 13px; font-weight: 700; padding: 12px 28px; border-radius: 6px; text-decoration: none; box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);">
+                Track Service Live Online ↗
+              </a>
+              <div style="margin-top: 10px; font-size: 12px; color: #64748b;">
+                You can also track anytime by entering code <strong style="color: #0f172a;">${request.requestId}</strong> on voltixnepal.com/track
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 30px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; line-height: 1.6; text-align: center;">
+              <div style="font-weight: 700; color: #475569;">VoltixNepal Electrical Services</div>
+              <div>Kathmandu Valley, Nepal • Helpline: ${businessPhone}</div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+  try {
+    await transporter.sendMail({
+      from,
+      to: request.customerEmail,
+      subject: `[Update] Service Request #${request.requestId}: ${currentStatus.label} — VoltixNepal`,
+      html: htmlContent,
+    });
+    console.log(`[SMTP Success] Status update email sent to ${request.customerEmail} for #${request.requestId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('[SMTP Error] Failed sending status update email:', err);
+    return { success: false, error: err.message };
+  }
+}

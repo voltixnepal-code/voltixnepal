@@ -8,7 +8,7 @@ import { verifyAdminRequest } from '@/lib/auth-guard';
 const requestSchema = z.object({
   customerName: z.string().min(2, 'Name must be at least 2 characters'),
   customerPhone: z.string().min(7, 'Please provide a valid phone number'),
-  customerEmail: z.string().email().optional().or(z.literal('')),
+  customerEmail: z.string().email('Please provide a valid email address'),
   preferredContact: z.enum(['WHATSAPP', 'PHONE', 'EMAIL']).default('WHATSAPP'),
   serviceId: z.string().optional(),
   serviceName: z.string().min(2, 'Please select or specify a service'),

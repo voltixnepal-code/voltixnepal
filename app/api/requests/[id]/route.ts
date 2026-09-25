@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminRequest } from '@/lib/auth-guard';
+import { sendStatusUpdateEmail } from '@/lib/email';
 
 export async function GET(
   req: NextRequest,
@@ -82,6 +83,28 @@ export async function PATCH(
         details: `Updated request #${updated.requestId}`,
       },
     });
+
+    // Send Status Update Email to Customer in background if status or assigned technician changed
+    if (updated.customerEmail && (body.status !== undefined || body.adminAssigned !== undefined)) {
+      prisma.websiteSettings.findUnique({ where: { id: 'default_settings' } }).then((settings) => {
+        sendStatusUpdateEmail(
+          {
+            requestId: updated.requestId,
+            customerName: updated.customerName,
+            customerEmail: updated.customerEmail,
+            serviceName: updated.serviceName,
+            status: updated.status,
+            internalNotes: updated.internalNotes,
+            adminAssigned: updated.adminAssigned,
+            address: updated.address,
+          },
+          {
+            phone: settings?.phone,
+            whatsappNumber: settings?.whatsappNumber,
+          }
+        ).catch((err) => console.error('Failed sending status email:', err));
+      });
+    }
 
     return NextResponse.json({ success: true, request: updated });
   } catch (error: any) {

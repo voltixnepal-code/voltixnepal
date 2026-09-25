@@ -128,6 +128,10 @@ export default function ServiceRequestForm({
       setErrorMessage('Please enter a valid phone or WhatsApp number.');
       return;
     }
+    if (!customerEmail.trim() || !customerEmail.includes('@')) {
+      setErrorMessage('Please enter a valid email address (compulsory for booking confirmation & tracking).');
+      return;
+    }
     if (!selectedService) {
       setErrorMessage('Please select a service category.');
       return;
@@ -259,11 +263,12 @@ export default function ServiceRequestForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label htmlFor="customerEmail" className="form-label">
-                Email Address <span className="text-slate-400 text-xs">(Optional for receipt)</span>
+                Email Address <span className="text-red-600">*</span>
               </label>
               <input
                 id="customerEmail"
                 type="email"
+                required
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
                 placeholder="e.g. ramesh@example.com"

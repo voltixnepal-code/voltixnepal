@@ -47,6 +47,7 @@ export default function Navbar({ settings }: NavbarProps) {
     { name: 'Home', href: '/' },
     { name: 'Services', href: '/services' },
     { name: 'Gallery', href: '/gallery' },
+    { name: 'Track Order', href: '/track' },
     { name: 'About', href: '/about' },
     { name: 'Blog', href: '/blog' },
     { name: 'FAQ', href: '/faq' },

@@ -69,11 +69,19 @@ export default function BookingSuccessModal({
 
         {/* Actions */}
         <div className="space-y-2 pt-2">
+          <Link
+            href={`/track?code=${encodeURIComponent(requestId)}`}
+            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-md bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition-colors"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Track Order & Technician Live</span>
+          </Link>
+
           <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors"
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors"
           >
             <MessageSquare className="w-4 h-4 fill-current" />
             <span>Open WhatsApp with Order Details</span>
@@ -94,7 +102,7 @@ export default function BookingSuccessModal({
               className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-md bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs border border-slate-300 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Site</span>
+              <span>Close</span>
             </button>
           </div>
         </div>
