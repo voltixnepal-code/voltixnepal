@@ -87,8 +87,8 @@ export default async function HomePage() {
       <ServicesGrid services={services} />
       <WhyChooseUs />
       <TestimonialSection testimonials={testimonials} />
-      <FaqAccordion faqs={faqs} />
       <BlogSnippet posts={blogPosts} />
+      <FaqAccordion faqs={faqs} />
     </div>
   );
 }
