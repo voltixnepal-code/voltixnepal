@@ -20,12 +20,12 @@ export default function BrandLogo({
 }: BrandLogoProps) {
   const isLight = variant === 'light';
 
-  // Height sizing for the logo - prominent, bold and readable across all devices
+  // Height sizing for the logo - extra prominent, bold and readable across all devices
   const heightClasses = {
-    sm: 'h-8 sm:h-9 max-w-[180px]',
-    md: 'h-10 sm:h-12 md:h-14 max-w-[280px] sm:max-w-[340px]',
-    lg: 'h-12 sm:h-14 md:h-16 max-w-[340px] sm:max-w-[420px]',
-    xl: 'h-14 sm:h-18 md:h-20 max-w-[400px] sm:max-w-[500px]',
+    sm: 'h-10 sm:h-12 max-w-[220px]',
+    md: 'h-12 sm:h-14 md:h-16 max-w-[320px] sm:max-w-[400px]',
+    lg: 'h-14 sm:h-16 md:h-20 max-w-[380px] sm:max-w-[480px]',
+    xl: 'h-16 sm:h-20 md:h-24 max-w-[450px] sm:max-w-[560px]',
   }[size];
 
   const logoSrc =
