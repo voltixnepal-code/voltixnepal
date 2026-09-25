@@ -74,13 +74,14 @@ export default function AboutSnippet({ settings }: AboutSnippetProps) {
 
           {/* Content Column */}
           <div className="lg:col-span-7 space-y-4 sm:space-y-5">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-100/80 border border-red-200/60 text-red-700 text-xs font-extrabold uppercase tracking-wider">
-              <span>About Us</span>
+            <div>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                About Us
+              </h2>
+              <p className="text-lg sm:text-xl font-bold text-slate-800 tracking-tight mt-1.5 leading-snug">
+                {headline}
+              </p>
             </div>
-
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              {headline}
-            </h2>
 
             <p
               className="text-sm text-slate-700 leading-relaxed"
