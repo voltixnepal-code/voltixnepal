@@ -82,9 +82,6 @@ export default function AdminSidebar() {
       {/* Brand Header */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-neutral-900 bg-black">
         <BrandLogo variant="light" size="sm" href="/admin" showSubtitle={false} />
-        <span className="px-1.5 py-0.5 rounded bg-red-600/30 text-red-400 font-bold text-[10px] uppercase border border-red-500/30">
-          Admin
-        </span>
         <button
           onClick={onCloseMobile}
           className="md:hidden text-neutral-400 hover:text-white p-1"
