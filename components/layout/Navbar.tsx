@@ -154,22 +154,29 @@ export default function Navbar({ settings }: NavbarProps) {
               <span>{businessPhone}</span>
             </a>
 
-            {/* Single, Clean Admin Portal Button on Desktop (Opens in New Tab) */}
-            {isAdmin && (
-              <a
-                href="/admin"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-xs whitespace-nowrap"
-                title="Open Admin Portal in New Tab"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Admin Portal</span>
-                <ExternalLink className="w-3 h-3 text-red-200" />
-              </a>
-            )}
-
-            {user ? (
+            {/* Desktop Action CTA & Account Controls */}
+            {isAdmin ? (
+              <div className="flex items-center gap-2">
+                <a
+                  href="/admin"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-xs whitespace-nowrap"
+                  title="Open Admin Portal in New Tab"
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Admin Portal</span>
+                  <ExternalLink className="w-3 h-3 text-red-200" />
+                </a>
+                <button
+                  onClick={handleLogout}
+                  title="Sign Out Admin"
+                  className="text-slate-500 hover:text-red-600 p-1.5 rounded-md border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : user ? (
               <div className="flex items-center gap-2">
                 <Link
                   href="/dashboard"
@@ -281,7 +288,20 @@ export default function Navbar({ settings }: NavbarProps) {
               <span>Request Service</span>
             </Link>
 
-            {user ? (
+            {isAdmin ? (
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="btn-secondary w-full text-center text-xs py-2.5 text-red-600 font-bold flex items-center justify-center gap-1.5"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out (Admin Session)</span>
+                </button>
+              </div>
+            ) : user ? (
               <div className="grid grid-cols-2 gap-2 pt-2">
                 <Link
                   href="/dashboard"
