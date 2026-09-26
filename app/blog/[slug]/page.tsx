@@ -124,7 +124,7 @@ export default async function BlogPostPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
-      <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-10">
+      <div className="w-full px-4 sm:px-6 lg:px-12 py-2">
         {/* Breadcrumb */}
         <div className="mb-6">
           <Link
@@ -137,12 +137,12 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
 
         {/* Article Container */}
-        <article className="bg-white rounded-lg border border-slate-200 p-6 sm:p-10 shadow-xs mb-10">
+        <article className="bg-white rounded-xl border border-slate-200 p-6 sm:p-10 lg:p-12 shadow-xs mb-10 w-full">
           <div className="text-red-600 text-xs font-bold uppercase tracking-wider mb-2">
             {post.category}
           </div>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
             {post.title}
           </h1>
 
@@ -158,14 +158,14 @@ export default async function BlogPostPage({ params }: Props) {
             </span>
           </div>
 
-          {/* Featured Image */}
-          <div className="relative h-64 sm:h-96 w-full rounded-md overflow-hidden bg-slate-100 mb-8">
+          {/* Featured Image - Full Screen Width Hero */}
+          <div className="relative h-64 sm:h-96 lg:h-[500px] xl:h-[600px] w-full rounded-xl overflow-hidden bg-slate-100 mb-10">
             <Image
               src={post.featuredImage}
               alt={post.title}
               fill
               priority
-              sizes="(max-width: 1024px) 100vw, 896px"
+              sizes="100vw"
               className="object-cover"
             />
           </div>

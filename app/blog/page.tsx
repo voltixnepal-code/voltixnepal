@@ -56,7 +56,7 @@ export default async function BlogPage({
 
   return (
     <div className="bg-slate-50 min-h-screen py-10 md:py-16 w-full">
-      <div className="w-full px-4 sm:px-6 lg:px-10">
+      <div className="w-full px-4 sm:px-6 lg:px-12">
         {/* Header */}
         <div className="max-w-3xl mb-10">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
