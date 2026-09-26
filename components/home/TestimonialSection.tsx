@@ -1,5 +1,7 @@
-import React from 'react';
-import { Star, MapPin, Quote } from 'lucide-react';
+'use client';
+
+import React, { useRef, useEffect } from 'react';
+import { Star, MapPin } from 'lucide-react';
 
 interface TestimonialItem {
   id: string;
@@ -17,12 +19,53 @@ interface TestimonialSectionProps {
 export default function TestimonialSection({
   testimonials,
 }: TestimonialSectionProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    let isTouched = false;
+
+    const onTouchStart = () => {
+      isTouched = true;
+    };
+    const onTouchEnd = () => {
+      setTimeout(() => {
+        isTouched = false;
+      }, 3000);
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    const interval = setInterval(() => {
+      if (window.innerWidth >= 768 || isTouched) return;
+
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      if (maxScroll <= 0) return;
+
+      if (el.scrollLeft >= maxScroll - 10) {
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        const itemWidth = el.firstElementChild?.clientWidth || 280;
+        el.scrollBy({ left: itemWidth + 16, behavior: 'smooth' });
+      }
+    }, 3500);
+
+    return () => {
+      clearInterval(interval);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, []);
+
   if (!testimonials || testimonials.length === 0) return null;
 
   return (
-    <section className="py-14 md:py-20 bg-white w-full" id="testimonials">
+    <section className="py-14 md:py-20 bg-white w-full overflow-hidden" id="testimonials">
       <div className="w-full px-4 sm:px-6 lg:px-10">
-        <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             What Homeowners & Businesses Say
           </h2>
@@ -31,11 +74,15 @@ export default function TestimonialSection({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div
+          ref={scrollRef}
+          className="flex md:grid md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 overflow-x-auto md:overflow-x-visible snap-x snap-mandatory scrollbar-none pb-4 md:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {testimonials.map((t) => (
             <div
               key={t.id}
-              className="p-6 rounded-lg border border-slate-200 bg-slate-50 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors"
+              className="w-[85vw] sm:w-[320px] md:w-auto shrink-0 md:shrink snap-center p-6 rounded-lg border border-slate-200 bg-slate-50 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-colors"
             >
               <div className="space-y-3">
                 <div className="flex items-center gap-1 text-amber-500">

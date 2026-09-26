@@ -4,6 +4,7 @@ import HeroSlider from '@/components/home/HeroSlider';
 import ServicesGrid from '@/components/home/ServicesGrid';
 import WhyChooseUs from '@/components/home/WhyChooseUs';
 import AboutSnippet from '@/components/home/AboutSnippet';
+import TrustpilotBanner from '@/components/home/TrustpilotBanner';
 import TestimonialSection from '@/components/home/TestimonialSection';
 import FaqAccordion from '@/components/home/FaqAccordion';
 import BlogSnippet from '@/components/home/BlogSnippet';
@@ -84,6 +85,7 @@ export default async function HomePage() {
           aboutBookBtnText: settings?.aboutBookBtnText,
         }}
       />
+      <TrustpilotBanner />
       <ServicesGrid services={services} />
       <WhyChooseUs />
       <TestimonialSection testimonials={testimonials} />
@@ -92,3 +94,4 @@ export default async function HomePage() {
     </div>
   );
 }
+

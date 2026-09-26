@@ -98,39 +98,23 @@ export default function HeroSlider({ slides }: HeroSliderProps) {
         </div>
       </div>
 
-      {/* Slider Controls - Clean unified bottom pill */}
+      {/* Slider Controls - Bottom Right <> arrows with no container */}
       {activeSlides.length > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/45 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/15 shadow-xl">
+        <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-8 z-20 flex items-center gap-1 sm:gap-2">
           <button
             onClick={handlePrev}
-            className="p-1 rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+            className="p-1.5 sm:p-2 text-white/70 hover:text-white transition-colors"
             aria-label="Previous Slide"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8 drop-shadow-md" />
           </button>
-
-          {/* Slide Indicator Dots */}
-          <div className="flex items-center gap-1.5 px-1">
-            {activeSlides.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentIndex(idx)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  idx === currentIndex
-                    ? 'w-6 bg-red-600'
-                    : 'w-2 bg-white/40 hover:bg-white/80'
-                }`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
-            ))}
-          </div>
 
           <button
             onClick={handleNext}
-            className="p-1 rounded-full text-white/70 hover:text-white hover:bg-white/20 transition-colors"
+            className="p-1.5 sm:p-2 text-white/70 hover:text-white transition-colors"
             aria-label="Next Slide"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8 drop-shadow-md" />
           </button>
         </div>
       )}

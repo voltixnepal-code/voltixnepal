@@ -1,12 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Zap,
   Phone,
   Mail,
   MapPin,
   Clock,
-  ShieldCheck,
   Facebook,
   Instagram,
   Youtube,
@@ -43,7 +41,7 @@ export default function Footer({ settings }: FooterProps) {
     'Professional electrical installation, emergency repair, and maintenance services across Kathmandu Valley. Certified safety standards and punctuality guaranteed by Sanjit Mishra.';
 
   return (
-    <footer className="bg-black text-neutral-200 border-t border-neutral-800 w-full">
+    <footer className="bg-black text-white border-t border-neutral-800 w-full">
       <div className="w-full px-4 sm:px-6 lg:px-10 pt-8 pb-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
@@ -53,17 +51,13 @@ export default function Footer({ settings }: FooterProps) {
             <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed font-normal">
               {footerText}
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 border border-neutral-800 text-xs text-amber-400 font-semibold shadow-xs">
-              <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>Lead Electrician: {ownerName}</span>
-            </div>
           </div>
 
           {/* 2 Sections on 1 Row: Our Services & Quick Links side-by-side */}
           <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:col-span-5">
             {/* Col 2: Services */}
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-2.5 border-l-2 border-red-600 pl-2">
+              <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-2.5 border-l-2 border-white pl-2">
                 Our Services
               </h3>
               <ul className="space-y-1.5 text-xs sm:text-sm text-neutral-300">
@@ -102,17 +96,17 @@ export default function Footer({ settings }: FooterProps) {
 
             {/* Col 3: Quick Navigation */}
             <div>
-              <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-2.5 border-l-2 border-red-600 pl-2">
+              <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-2.5 border-l-2 border-white pl-2">
                 Quick Links
               </h3>
               <ul className="space-y-1.5 text-xs sm:text-sm text-neutral-300">
                 <li>
-                  <Link href="/request-service" className="text-red-400 font-bold hover:text-red-300 transition-colors block">
+                  <Link href="/request-service" className="text-neutral-300 hover:text-white hover:underline transition-colors block">
                     Request a Service
                   </Link>
                 </li>
                 <li>
-                  <Link href="/gallery" className="text-amber-400 font-semibold hover:text-amber-300 transition-colors block">
+                  <Link href="/gallery" className="text-neutral-300 hover:text-white hover:underline transition-colors block">
                     Work Gallery & Videos
                   </Link>
                 </li>
@@ -136,33 +130,43 @@ export default function Footer({ settings }: FooterProps) {
                     Contact & Location
                   </Link>
                 </li>
+                <li>
+                  <a
+                    href="https://www.trustpilot.com/evaluate/voltixnepal.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#00b67a] hover:text-[#00a36c] font-semibold flex items-center gap-1 transition-colors"
+                  >
+                    <span>⭐ Review Us on Trustpilot</span>
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
 
           {/* Col 4: Contact Information */}
           <div className="lg:col-span-3 space-y-2.5">
-            <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-2.5 border-l-2 border-red-600 pl-2">
+            <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mb-2.5 border-l-2 border-white pl-2">
               Contact & Hours
             </h3>
             <div className="flex items-start gap-2 text-xs sm:text-sm text-neutral-200">
-              <Phone className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+              <Phone className="w-4 h-4 text-white mt-0.5 shrink-0" />
               <a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-white font-semibold transition-colors">
                 {phone}
               </a>
             </div>
             <div className="flex items-start gap-2 text-xs sm:text-sm text-neutral-200">
-              <Mail className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+              <Mail className="w-4 h-4 text-white mt-0.5 shrink-0" />
               <a href={`mailto:${email}`} className="hover:text-white transition-colors">
                 {email}
               </a>
             </div>
             <div className="flex items-start gap-2 text-xs sm:text-sm text-neutral-300">
-              <MapPin className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+              <MapPin className="w-4 h-4 text-white mt-0.5 shrink-0" />
               <span>{address}</span>
             </div>
             <div className="flex items-start gap-2 text-xs sm:text-sm text-neutral-300 pt-0.5">
-              <Clock className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+              <Clock className="w-4 h-4 text-white mt-0.5 shrink-0" />
               <span className="text-xs">{hours}</span>
             </div>
 
@@ -174,7 +178,7 @@ export default function Footer({ settings }: FooterProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Facebook"
-                  className="p-1.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-red-600 hover:text-white transition-colors"
+                  className="p-1.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-neutral-800 hover:text-white hover:border-neutral-700 transition-colors"
                 >
                   <Facebook className="w-3.5 h-3.5" />
                 </a>
@@ -185,7 +189,7 @@ export default function Footer({ settings }: FooterProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Instagram"
-                  className="p-1.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-red-600 hover:text-white transition-colors"
+                  className="p-1.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-neutral-800 hover:text-white hover:border-neutral-700 transition-colors"
                 >
                   <Instagram className="w-3.5 h-3.5" />
                 </a>
@@ -196,7 +200,7 @@ export default function Footer({ settings }: FooterProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="YouTube"
-                  className="p-1.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-red-600 hover:text-white transition-colors"
+                  className="p-1.5 rounded-md bg-neutral-900 border border-neutral-800 text-neutral-300 hover:bg-neutral-800 hover:text-white hover:border-neutral-700 transition-colors"
                 >
                   <Youtube className="w-3.5 h-3.5" />
                 </a>
@@ -220,7 +224,7 @@ export default function Footer({ settings }: FooterProps) {
               href="https://bishalcodes.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-1 text-white font-medium hover:text-red-400 transition-colors"
+              className="ml-1 text-white font-medium hover:underline transition-colors"
             >
               bishalcodes.com
             </a>

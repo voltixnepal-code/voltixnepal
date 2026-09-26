@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShieldCheck, Phone, Check } from 'lucide-react';
+import { Phone, Check } from 'lucide-react';
 
 interface AboutSnippetProps {
   settings?: {
@@ -49,31 +49,8 @@ export default function AboutSnippet({ settings }: AboutSnippetProps) {
     <section className="py-14 md:py-20 bg-slate-50 border-t border-slate-200 w-full">
       <div className="w-full px-4 sm:px-6 lg:px-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-          {/* Photo Column */}
-          <div className="lg:col-span-5 relative">
-            <div className="relative rounded-lg overflow-hidden border border-slate-200 shadow-md bg-white">
-              <Image
-                src={ownerPhoto}
-                alt={`${ownerName} - Electrical Contractor`}
-                width={800}
-                height={600}
-                className="object-cover w-full h-[380px]"
-              />
-              <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-bold">{ownerName}</div>
-                  <div className="text-xs text-slate-300">{ownerTitle}</div>
-                </div>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-red-600 text-white text-xs font-bold">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>VoltixNepal</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Content Column */}
-          <div className="lg:col-span-7 space-y-4 sm:space-y-5">
+          {/* Content Column (Text first on mobile) */}
+          <div className="lg:col-span-7 space-y-4 sm:space-y-5 lg:order-2">
             <div>
               <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
                 About Us
@@ -92,28 +69,44 @@ export default function AboutSnippet({ settings }: AboutSnippetProps) {
               {bio2}
             </p>
 
-            {/* Key Service Highlights */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2">
-              {highlights.map((item, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-                  <Check className="w-4 h-4 text-red-600 shrink-0" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
+            {/* Key Service Highlights & Action Buttons (Side-by-side on mobile) */}
+            <div className="grid grid-cols-2 sm:grid-cols-12 gap-3 sm:gap-6 pt-2 items-center">
+              {/* Highlights */}
+              <div className="sm:col-span-7 space-y-2 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-2.5">
+                {highlights.map((item, i) => (
+                  <div key={i} className="flex items-start sm:items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold text-slate-800 leading-tight">
+                    <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-wrap items-center gap-3 pt-3">
-              <Link href="/request-service" className="btn-primary text-xs font-bold">
-                {bookBtnText}
-              </Link>
-              <a
-                href={`tel:${phone.replace(/\s+/g, '')}`}
-                className="btn-secondary text-xs font-bold flex items-center gap-2"
-              >
-                <Phone className="w-3.5 h-3.5 text-red-600" />
-                <span>Call Directly: {phone}</span>
-              </a>
+              {/* Action buttons beside text on mobile */}
+              <div className="sm:col-span-5 flex flex-col gap-2">
+                <Link href="/request-service" className="btn-primary text-[11px] sm:text-xs font-bold text-center justify-center py-2.5 px-2.5 w-full">
+                  {bookBtnText}
+                </Link>
+                <a
+                  href={`tel:${phone.replace(/\s+/g, '')}`}
+                  className="btn-secondary text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 py-2.5 px-2.5 w-full"
+                >
+                  <Phone className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  <span>Call: {phone}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Photo Column (Photo second on mobile) */}
+          <div className="lg:col-span-5 relative lg:order-1">
+            <div className="relative rounded-lg overflow-hidden border border-slate-200 shadow-md bg-white max-w-sm sm:max-w-md lg:max-w-none mx-auto">
+              <Image
+                src={ownerPhoto}
+                alt={`${ownerName} - Electrical Contractor`}
+                width={800}
+                height={600}
+                className="object-cover w-full h-[240px] sm:h-[320px] lg:h-[420px]"
+              />
             </div>
           </div>
         </div>

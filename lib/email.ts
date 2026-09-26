@@ -754,6 +754,23 @@ export async function sendPaymentInvoiceEmail(
             </td>
           </tr>
 
+          <!-- Trustpilot Review Invitation Card -->
+          <tr>
+            <td style="padding: 0 30px 20px;">
+              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px 20px; text-align: center;">
+                <div style="font-size: 13px; font-weight: 800; color: #166534;">
+                  ⭐ Rate Your Experience on Trustpilot
+                </div>
+                <div style="font-size: 12px; color: #15803d; margin: 4px 0 12px;">
+                  How did Sanjit Mishra do? Your honest feedback helps us maintain high safety & service quality.
+                </div>
+                <a href="https://www.trustpilot.com/evaluate/voltixnepal.com" target="_blank" style="display: inline-block; background-color: #00b67a; color: #ffffff; font-size: 13px; font-weight: 800; padding: 10px 22px; border-radius: 6px; text-decoration: none;">
+                  ★ Write a Review on Trustpilot
+                </a>
+              </div>
+            </td>
+          </tr>
+
           <!-- Footer with Social Icons -->
           <tr>
             <td>

@@ -41,19 +41,19 @@ export default function WhyChooseUs() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
           {points.map((pt, idx) => (
             <div
               key={idx}
-              className="p-6 rounded-lg border border-slate-200 bg-slate-50 hover:bg-white hover:border-slate-300 transition-colors shadow-xs"
+              className="p-3.5 sm:p-5 md:p-6 rounded-lg border border-slate-200 bg-slate-50 hover:bg-white hover:border-slate-300 transition-colors shadow-xs flex flex-col justify-start"
             >
-              <div className="w-12 h-12 rounded-md bg-white border border-slate-200 flex items-center justify-center mb-4 shadow-xs">
+              <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-md bg-white border border-slate-200 flex items-center justify-center mb-2.5 sm:mb-4 shadow-xs shrink-0">
                 {pt.icon}
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-2">
+              <h3 className="text-xs sm:text-sm md:text-base font-bold text-slate-900 mb-1 sm:mb-2 leading-snug">
                 {pt.title}
               </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
+              <p className="text-[11px] sm:text-xs text-slate-600 leading-normal sm:leading-relaxed">
                 {pt.description}
               </p>
             </div>
