@@ -12,7 +12,7 @@ export default function TrustpilotBanner({
   const profileUrl = 'https://www.trustpilot.com/review/voltixnepal.com';
 
   return (
-    <section className="w-full bg-slate-50 border-y border-slate-200 py-12 md:py-16">
+    <section className="w-full bg-white border-y border-slate-200 py-12 md:py-16">
       <div className="w-full px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           
@@ -57,7 +57,7 @@ export default function TrustpilotBanner({
                 href={profileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-white hover:bg-slate-100 text-slate-800 font-semibold text-sm transition-colors border border-slate-300 shadow-xs"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm transition-colors border border-slate-300 shadow-xs"
               >
                 <MessageSquare className="w-4 h-4 text-[#00b67a]" />
                 <span>View All Reviews</span>
@@ -67,18 +67,16 @@ export default function TrustpilotBanner({
 
           </div>
 
-          {/* Right Image Feature Column */}
+          {/* Right Image Feature Column (Transparent Floating Image - No Card Box) */}
           <div className="lg:col-span-5 flex items-center justify-center">
-            <div className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-xl bg-white max-w-md w-full">
-              <div className="relative aspect-square w-full bg-slate-100">
-                <Image
-                  src="/trustpilot-banner-img.jpg"
-                  alt="Leave Us A Review & Follow Us Online - Voltix Nepal"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
+            <div className="relative aspect-square w-full max-w-md mx-auto">
+              <Image
+                src="/trustpilot-banner-img.jpg"
+                alt="Leave Us A Review & Follow Us Online - Voltix Nepal"
+                fill
+                className="object-contain mix-blend-multiply"
+                priority
+              />
             </div>
           </div>
 
@@ -87,6 +85,7 @@ export default function TrustpilotBanner({
     </section>
   );
 }
+
 
 
 
