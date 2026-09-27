@@ -114,10 +114,22 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    match /newsletterSubscribers/{subId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /blogPostViews/{slug} {
+      allow read: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
+
     match /websiteSettings/{settingId} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
 
     // ==========================================
     // 5. PRIVATE ADMIN LOGS & NOTIFICATIONS

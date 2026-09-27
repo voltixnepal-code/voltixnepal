@@ -96,12 +96,24 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 6. BLOG POSTS & GUIDES
+    // 6. BLOG POSTS, VIEWS & NEWSLETTER
     // ==========================================
     match /blogPosts/{postId} {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    match /blogPostViews/{slug} {
+      allow read: if true;
+      allow create, update: if true; // Public can increment view count
+      allow delete: if isAdmin();
+    }
+
+    match /newsletterSubscribers/{subId} {
+      allow create: if true; // Public can subscribe with email
+      allow read, update, delete: if isAdmin();
+    }
+
 
     // ==========================================
     // 7. FAQS & TESTIMONIALS

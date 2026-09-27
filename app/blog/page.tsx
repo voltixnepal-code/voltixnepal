@@ -2,14 +2,14 @@ import React from 'react';
 import prisma from '@/lib/prisma';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calendar, User, ArrowRight, Clock } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Search, ChevronRight } from 'lucide-react';
 import { Metadata } from 'next';
 import { DEFAULT_BLOG_POSTS } from '@/lib/default-data';
 
 export const metadata: Metadata = {
-  title: 'Electrical Safety & Maintenance Guides | VoltixNepal',
+  title: 'Blog | VoltixNepal',
   description:
-    'Practical electrical guides, monsoon troubleshooting, inverter sizing, and wiring safety tips for homeowners in Nepal.',
+    'Electrical safety guides, monsoon wiring tips, inverter sizing, and maintenance advice for homeowners in Nepal.',
 };
 
 export const revalidate = 0;
@@ -22,212 +22,178 @@ export default async function BlogPage({
   let posts = DEFAULT_BLOG_POSTS as any[];
   let allPosts = DEFAULT_BLOG_POSTS as any[];
 
+  const categoryFilter = searchParams.category;
+  const searchQuery = searchParams.q?.toLowerCase().trim();
+
   try {
     const whereClause: any = { isPublished: true };
-    if (searchParams.category && searchParams.category !== 'ALL') {
-      whereClause.category = searchParams.category;
+    if (categoryFilter && categoryFilter !== 'ALL') {
+      whereClause.category = categoryFilter;
     }
-    if (searchParams.q) {
+    if (searchQuery) {
       whereClause.OR = [
-        { title: { contains: searchParams.q } },
-        { summary: { contains: searchParams.q } },
+        { title: { contains: searchQuery, mode: 'insensitive' } },
+        { summary: { contains: searchQuery, mode: 'insensitive' } },
+        { content: { contains: searchQuery, mode: 'insensitive' } },
       ];
     }
 
-    const [dbPosts, dbAllPosts] = await Promise.all([
-      prisma.blogPost.findMany({
-        where: whereClause,
-        orderBy: { publishedAt: 'desc' },
-      }),
-      prisma.blogPost.findMany({
-        where: { isPublished: true },
-        select: { category: true },
-      }),
+    const [dbPosts, dbAll] = await Promise.all([
+      prisma.blogPost.findMany({ where: whereClause, orderBy: { publishedAt: 'desc' } }),
+      prisma.blogPost.findMany({ where: { isPublished: true }, select: { category: true } }),
     ]);
-
-    if (dbPosts && dbPosts.length > 0) posts = dbPosts;
-    if (dbAllPosts && dbAllPosts.length > 0) allPosts = dbAllPosts;
-  } catch (err) {
-    console.warn('Using default blog posts:', err);
+    if (dbPosts) posts = dbPosts;
+    if (dbAll && dbAll.length > 0) allPosts = dbAll;
+  } catch {
+    // fallback to filtering default static data if DB unavailable
+    if (categoryFilter && categoryFilter !== 'ALL') {
+      posts = posts.filter((p) => p.category === categoryFilter);
+    }
+    if (searchQuery) {
+      posts = posts.filter(
+        (p) =>
+          p.title.toLowerCase().includes(searchQuery) ||
+          p.summary?.toLowerCase().includes(searchQuery) ||
+          p.content?.toLowerCase().includes(searchQuery)
+      );
+    }
   }
 
-  const categories = ['ALL', ...Array.from(new Set(allPosts.map((p) => p.category)))];
-  const featured = posts[0];
-  const rest = posts.slice(1);
+  const categories = ['ALL', ...Array.from(new Set(allPosts.map((p: any) => p.category)))];
+  const activeCategory = categoryFilter || 'ALL';
 
   return (
-    <div className="bg-white min-h-screen w-full">
+    <div className="min-h-screen bg-slate-50/60 text-slate-800 relative overflow-hidden">
+      <div className="absolute top-10 left-[-100px] w-96 h-96 bg-red-100/40 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Page Header */}
-      <div className="w-full bg-slate-900 py-12 sm:py-16 px-4 sm:px-8 lg:px-16">
-        <div className="max-w-7xl mx-auto">
-          <p className="text-red-400 text-sm font-semibold uppercase tracking-widest mb-2">VoltixNepal</p>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-            Electrical Safety Guides
-          </h1>
-          <p className="text-slate-400 text-base mt-3 max-w-2xl">
-            Practical advice from Sanjit Mishra to help you maintain safe wiring and make smart decisions about your home power systems.
-          </p>
-        </div>
-      </div>
+      <main className="w-full px-4 sm:px-6 lg:px-10 py-6 sm:py-10 relative z-10">
+        
+        {/* Main white container card */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 md:p-10 shadow-xs">
+          
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="mb-4">
+            <ol className="flex items-center gap-1.5 text-xs sm:text-sm text-slate-500">
+              <li>
+                <Link href="/" className="hover:text-red-600 transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              </li>
+              <li className="text-slate-800 font-medium">Blog</li>
+            </ol>
+          </nav>
 
-      <div className="w-full px-4 sm:px-8 lg:px-16 py-10 lg:py-14 max-w-7xl mx-auto">
-
-        {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 mb-10">
-          {categories.map((cat) => {
-            const isSelected = (searchParams.category || 'ALL') === cat;
-            return (
-              <Link
-                key={cat}
-                href={cat === 'ALL' ? '/blog' : `/blog?category=${encodeURIComponent(cat)}`}
-                className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors border ${
-                  isSelected
-                    ? 'bg-red-600 text-white border-red-600'
-                    : 'bg-white border-slate-300 text-slate-700 hover:border-red-400 hover:text-red-600'
-                }`}
-              >
-                {cat}
-              </Link>
-            );
-          })}
-        </div>
-
-        {posts.length === 0 ? (
-          <div className="bg-slate-50 rounded-xl border border-slate-200 p-16 text-center text-slate-500 text-sm">
-            No articles found in this category. Check back soon!
+          {/* Page Header */}
+          <div className="mb-8 border-b border-slate-200/80 pb-6">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight mb-2">
+              Electrical Safety & Engineering Blog
+            </h1>
+            <p className="text-slate-500 text-sm sm:text-base font-normal max-w-2xl">
+              Practical guides, circuit troubleshooting advice, inverter calculation formulas, and safety standards for homes and businesses across Nepal.
+            </p>
           </div>
-        ) : (
-          <>
-            {/* Featured / Hero Post */}
-            {featured && !searchParams.category && !searchParams.q && (
-              <Link href={`/blog/${featured.slug}`} className="group block mb-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 rounded-2xl overflow-hidden border border-slate-200 shadow-sm hover:shadow-lg transition-shadow">
-                  <div className="relative h-64 sm:h-80 lg:h-full min-h-[300px] bg-slate-100 overflow-hidden">
-                    <Image
-                      src={featured.featuredImage}
-                      alt={featured.title}
-                      fill
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      priority
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                    <div className="absolute top-4 left-4">
-                      <span className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                        Featured
-                      </span>
-                    </div>
-                  </div>
-                  <div className="bg-white p-8 sm:p-10 flex flex-col justify-center">
-                    <span className="text-red-600 text-xs font-bold uppercase tracking-wider mb-2">
-                      {featured.category}
-                    </span>
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 group-hover:text-red-600 transition-colors leading-tight mb-3">
-                      {featured.title}
-                    </h2>
-                    <p className="text-slate-600 text-sm sm:text-base leading-relaxed mb-6 line-clamp-3">
-                      {featured.summary}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-slate-400 mb-5">
-                      <span className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5" />
-                        {featured.author}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5" />
-                        {new Date(featured.publishedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5" />
-                        {Math.max(1, Math.ceil(featured.content?.split(' ').length / 200))} min read
-                      </span>
-                    </div>
-                    <div className="inline-flex items-center gap-2 text-sm font-bold text-red-600 group-hover:gap-3 transition-all">
-                      Read Full Guide <ArrowRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            )}
 
-            {/* Grid of remaining posts */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
-              {(searchParams.category || searchParams.q ? posts : rest).map((post: any) => {
+          {/* Category Filter & Search query banner */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => {
+                const isActive = activeCategory === cat;
+                return (
+                  <Link
+                    key={cat}
+                    href={cat === 'ALL' ? '/blog' : `/blog?category=${encodeURIComponent(cat)}`}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                      isActive
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    {cat}
+                  </Link>
+                );
+              })}
+            </div>
+
+            {searchQuery && (
+              <div className="text-xs text-slate-500 flex items-center gap-2">
+                <span>Search results for &ldquo;<strong className="text-slate-800">{searchQuery}</strong>&rdquo;</span>
+                <Link href="/blog" className="text-red-600 hover:underline">Clear</Link>
+              </div>
+            )}
+          </div>
+
+          {/* Posts Grid */}
+          {posts.length === 0 ? (
+            <div className="py-20 text-center border border-dashed border-slate-200 rounded-xl">
+              <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+              <p className="text-slate-500 font-medium text-sm">No articles found.</p>
+              <p className="text-slate-400 text-xs mt-1">Try searching for different keywords or select another category.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+              {posts.map((post: any) => {
                 const dateStr = new Date(post.publishedAt).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
                 });
-                const readingTime = Math.max(1, Math.ceil(post.content?.split(' ').length / 200));
-
+                const readingTime = Math.max(1, Math.ceil((post.content?.split(' ').length || 0) / 200));
                 return (
-                  <article
-                    key={post.id}
-                    className="group bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-shadow flex flex-col"
-                  >
-                    <Link href={`/blog/${post.slug}`} className="block">
-                      <div className="relative h-52 w-full bg-slate-100 overflow-hidden">
-                        <Image
-                          src={post.featuredImage}
-                          alt={post.title}
-                          fill
-                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute top-3 left-3">
-                          <span className="inline-block px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[11px] font-bold">
-                            {post.category}
-                          </span>
-                        </div>
-                      </div>
+                  <article key={post.id} className="group flex flex-col bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-xs hover:border-slate-300 transition-all">
+                    {/* Thumbnail */}
+                    <Link href={`/blog/${post.slug}`} className="block relative w-full aspect-[16/9] overflow-hidden bg-slate-100">
+                      <Image
+                        src={post.featuredImage}
+                        alt={post.title}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
                     </Link>
 
-                    <div className="p-5 flex flex-col flex-1">
-                      <div className="flex items-center gap-3 text-[11px] text-slate-400 mb-3">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {dateStr}
-                        </span>
+                    {/* Content padding */}
+                    <div className="p-5 flex-1 flex flex-col">
+                      {/* Meta line */}
+                      <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-2">
+                        <span className="font-bold text-red-600 uppercase tracking-wide">{post.category}</span>
                         <span>•</span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {readingTime} min read
-                        </span>
+                        <span>{dateStr}</span>
+                        <span>•</span>
+                        <span>{readingTime} min read</span>
                       </div>
 
+                      {/* Title */}
                       <Link href={`/blog/${post.slug}`}>
-                        <h2 className="font-bold text-slate-900 text-base group-hover:text-red-600 transition-colors line-clamp-2 leading-snug mb-2">
+                        <h2 className="text-base font-bold text-slate-900 group-hover:text-red-600 transition-colors leading-snug mb-2 line-clamp-2">
                           {post.title}
                         </h2>
                       </Link>
 
-                      <p className="text-xs sm:text-sm text-slate-600 line-clamp-3 leading-relaxed flex-1">
+                      {/* Summary */}
+                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-3 flex-1 mb-4">
                         {post.summary}
                       </p>
 
-                      <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs text-slate-400">
-                          <div className="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-bold">
-                            {post.author?.charAt(0) || 'S'}
-                          </div>
-                          {post.author}
-                        </div>
-                        <Link
-                          href={`/blog/${post.slug}`}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-red-600 hover:gap-2 transition-all"
-                        >
-                          Read <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </div>
+                      {/* Read more */}
+                      <Link
+                        href={`/blog/${post.slug}`}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-900 hover:text-red-600 transition-colors mt-auto pt-3 border-t border-slate-100"
+                      >
+                        Read Full Article <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
                   </article>
                 );
               })}
             </div>
-          </>
-        )}
-      </div>
+          )}
+
+        </div>
+
+      </main>
     </div>
   );
 }
