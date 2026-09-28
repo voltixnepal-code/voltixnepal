@@ -26,16 +26,58 @@ const requestSchema = z.object({
   userId: z.string().optional(),
 });
 
+async function generateUniqueRequestId(): Promise<string> {
+  const currentYear = new Date().getFullYear();
+  const prefix = `VN-${currentYear}-`;
+
+  // Fetch the latest requests for the current year to find the maximum existing sequence number
+  const latestRequests = await prisma.serviceRequest.findMany({
+    where: {
+      requestId: {
+        startsWith: prefix,
+      },
+    },
+    select: {
+      requestId: true,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: 100,
+  });
+
+  let maxSequence = 0;
+  for (const req of latestRequests) {
+    const parts = req.requestId.split('-');
+    if (parts.length >= 3) {
+      const num = parseInt(parts[2], 10);
+      if (!isNaN(num) && num > maxSequence) {
+        maxSequence = num;
+      }
+    }
+  }
+
+  const count = await prisma.serviceRequest.count();
+  let nextSeq = Math.max(maxSequence + 1, count + 1);
+
+  // Guarantee uniqueness by verifying against database
+  while (true) {
+    const candidateId = `${prefix}${String(nextSeq).padStart(6, '0')}`;
+    const exists = await prisma.serviceRequest.findUnique({
+      where: { requestId: candidateId },
+      select: { id: true },
+    });
+    if (!exists) {
+      return candidateId;
+    }
+    nextSeq++;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const validated = requestSchema.parse(body);
-
-    // Generate Request ID (e.g. VN-2026-000001)
-    const currentYear = new Date().getFullYear();
-    const count = await prisma.serviceRequest.count();
-    const sequence = String(count + 1).padStart(6, '0');
-    const requestId = `VN-${currentYear}-${sequence}`;
 
     // Auto-generate Google Maps URL if lat/lng are provided
     let mapsUrl = validated.googleMapsUrl;
@@ -43,31 +85,51 @@ export async function POST(req: NextRequest) {
       mapsUrl = `https://www.google.com/maps?q=${validated.latitude},${validated.longitude}`;
     }
 
-    // Save to Database
-    const newRequest = await prisma.serviceRequest.create({
-      data: {
-        requestId,
-        userId: validated.userId || null,
-        customerName: validated.customerName,
-        customerPhone: validated.customerPhone,
-        customerEmail: validated.customerEmail || null,
-        preferredContact: validated.preferredContact,
-        serviceId: validated.serviceId || null,
-        serviceName: validated.serviceName,
-        urgency: validated.urgency,
-        preferredDate: validated.preferredDate || null,
-        preferredTime: validated.preferredTime || null,
-        description: validated.description,
-        address: validated.address,
-        area: validated.area || null,
-        city: validated.city || 'Kathmandu',
-        latitude: validated.latitude || null,
-        longitude: validated.longitude || null,
-        googleMapsUrl: mapsUrl || null,
-        additionalNotes: validated.additionalNotes || null,
-        status: 'NEW',
-      },
-    });
+    // Save to Database with collision-retry mechanism
+    let newRequest;
+    let requestId = '';
+    const maxAttempts = 5;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        requestId = await generateUniqueRequestId();
+        newRequest = await prisma.serviceRequest.create({
+          data: {
+            requestId,
+            userId: validated.userId || null,
+            customerName: validated.customerName,
+            customerPhone: validated.customerPhone,
+            customerEmail: validated.customerEmail || null,
+            preferredContact: validated.preferredContact,
+            serviceId: validated.serviceId || null,
+            serviceName: validated.serviceName,
+            urgency: validated.urgency,
+            preferredDate: validated.preferredDate || null,
+            preferredTime: validated.preferredTime || null,
+            description: validated.description,
+            address: validated.address,
+            area: validated.area || null,
+            city: validated.city || 'Kathmandu',
+            latitude: validated.latitude || null,
+            longitude: validated.longitude || null,
+            googleMapsUrl: mapsUrl || null,
+            additionalNotes: validated.additionalNotes || null,
+            status: 'NEW',
+          },
+        });
+        break; // Successfully created!
+      } catch (err: any) {
+        if (err.code === 'P2002' && attempt < maxAttempts) {
+          console.warn(`RequestId collision on ${requestId}, retrying (attempt ${attempt}/${maxAttempts})...`);
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    if (!newRequest) {
+      throw new Error('Failed to create service request after multiple attempts.');
+    }
 
     // Create Admin In-App Notification
     await prisma.notification.create({
@@ -142,7 +204,13 @@ export async function POST(req: NextRequest) {
       );
     }
     return NextResponse.json(
-      { success: false, message: error.message || 'Internal server error' },
+      {
+        success: false,
+        message:
+          error?.code === 'P2002'
+            ? 'A request with this ID already exists. Please try submitting again.'
+            : (error.message || 'Internal server error')
+      },
       { status: 500 }
     );
   }
