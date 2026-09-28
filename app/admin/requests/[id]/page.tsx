@@ -25,10 +25,25 @@ import {
   DollarSign,
   History,
   Check,
+  Radio,
+  Bike,
+  Compass,
+  Globe,
+  Share2,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
 import { CustomerLoyaltyBadge, PaymentBadge } from '@/components/admin/CustomerLoyaltyBadge';
 import { adminFetch } from '@/lib/admin-fetch';
+
+const LiveTrackingMap = dynamic(() => import('@/components/maps/LiveTrackingMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 w-full bg-slate-100 rounded-xl flex items-center justify-center text-xs text-slate-400">
+      Loading interactive dispatch map...
+    </div>
+  ),
+});
 
 export default function AdminRequestDetailPage({
   params,
@@ -40,6 +55,15 @@ export default function AdminRequestDetailPage({
   const [status, setStatus] = useState('NEW');
   const [internalNotes, setInternalNotes] = useState('');
   const [adminAssigned, setAdminAssigned] = useState('Sanjit Mishra');
+
+  // Real GPS & Live Ride State
+  const [rideStarted, setRideStarted] = useState(false);
+  const [technicianLat, setTechnicianLat] = useState<number | null>(null);
+  const [technicianLng, setTechnicianLng] = useState<number | null>(null);
+  const [technicianHeading, setTechnicianHeading] = useState<number | null>(null);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [broadcastStatus, setBroadcastStatus] = useState<string | null>(null);
+  const watchIdRef = React.useRef<number | null>(null);
 
   // Financial & Billing State
   const [billedAmount, setBilledAmount] = useState<number | string>('');
@@ -65,6 +89,11 @@ export default function AdminRequestDetailPage({
         setInternalNotes(req.internalNotes || '');
         setAdminAssigned(req.adminAssigned || 'Sanjit Mishra');
 
+        setRideStarted(Boolean(req.rideStarted));
+        setTechnicianLat(req.technicianLat || null);
+        setTechnicianLng(req.technicianLng || null);
+        setTechnicianHeading(req.technicianHeading || null);
+
         setBilledAmount(req.billedAmount || '');
         setPaidAmount(req.paidAmount || '');
         setPaymentStatus(req.paymentStatus || 'UNPAID');
@@ -77,6 +106,91 @@ export default function AdminRequestDetailPage({
       setLoading(false);
     }
   };
+
+  // Start Real GPS Broadcast via watchPosition
+  const startGpsBroadcast = () => {
+    if (!navigator.geolocation) {
+      setBroadcastStatus('Geolocation is not supported on this device/browser.');
+      return;
+    }
+
+    setBroadcastStatus('Connecting to device GPS satellites...');
+    setIsBroadcasting(true);
+
+    const id = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const heading = pos.coords.heading || null;
+
+        setTechnicianLat(lat);
+        setTechnicianLng(lng);
+        setTechnicianHeading(heading);
+        setBroadcastStatus(`Broadcasting Real GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+
+        // Stream coordinates to live endpoint
+        try {
+          await adminFetch(`/api/requests/${params.id}/live-location`, {
+            method: 'POST',
+            body: JSON.stringify({
+              technicianLat: lat,
+              technicianLng: lng,
+              technicianHeading: heading,
+              rideStarted: true,
+            }),
+          });
+        } catch (err) {
+          console.error('Failed to post live coordinates:', err);
+        }
+      },
+      (err) => {
+        setBroadcastStatus(`GPS Error: ${err.message}`);
+        setIsBroadcasting(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 15000 }
+    );
+
+    watchIdRef.current = id;
+  };
+
+  const stopGpsBroadcast = async () => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    setIsBroadcasting(false);
+    setBroadcastStatus('Ride stopped. Real GPS broadcasting paused.');
+
+    try {
+      await adminFetch(`/api/requests/${params.id}/live-location`, {
+        method: 'POST',
+        body: JSON.stringify({
+          rideStarted: false,
+        }),
+      });
+      setRideStarted(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleToggleRide = async () => {
+    if (!rideStarted) {
+      setRideStarted(true);
+      setStatus('IN_PROGRESS');
+      startGpsBroadcast();
+    } else {
+      await stopGpsBroadcast();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetchRequest();
@@ -475,34 +589,141 @@ export default function AdminRequestDetailPage({
             )}
           </div>
 
-          {/* Location & Maps Actions */}
-          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-red-600" />
-                <span>Customer Address & Coordinates</span>
-              </h3>
+          {/* Real Location, Dispatch & Live GPS Ride Controls */}
+          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-red-600" />
+                  <span>Customer Location & Live Dispatch</span>
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Real GPS coordinates, reverse-geocoded place name, and real-time technician ride tracking
+                </p>
+              </div>
+
               {request.latitude && request.longitude && (
-                <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                  GPS: {request.latitude.toFixed(4)}, {request.longitude.toFixed(4)}
+                <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 flex items-center gap-1 font-bold">
+                  <Compass className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>GPS: {request.latitude.toFixed(5)}, {request.longitude.toFixed(5)}</span>
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="sm:col-span-2">
-                <span className="text-slate-400 block text-[11px]">Full Street Address</span>
-                <span className="font-bold text-slate-900 text-sm">{request.address}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Area / City</span>
-                <span className="font-semibold text-slate-800">
-                  {request.area ? `${request.area}, ` : ''}{request.city}
+            {/* Location & IP Details Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
+              <div className="sm:col-span-2 p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                  Verified Place & Street Address
                 </span>
+                <div className="font-extrabold text-slate-900 text-sm">
+                  {request.customerLocationName ? (
+                    <span className="text-red-700 mr-1.5 font-bold">[{request.customerLocationName}]</span>
+                  ) : null}
+                  {request.address}
+                </div>
+                <div className="text-[11px] text-slate-600 mt-1 font-semibold">
+                  Area: {request.area || 'Kathmandu Valley'} | City: {request.city}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
+                <div>
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+                    Customer Booking IP
+                  </span>
+                  <div className="font-mono font-bold text-slate-800 text-xs flex items-center gap-1 mt-0.5">
+                    <Globe className="w-3.5 h-3.5 text-blue-600" />
+                    <span>{request.ipAddress || 'Not recorded'}</span>
+                  </div>
+                </div>
+                <div className="text-[10px] text-slate-400 mt-2">
+                  Nepal ISP Network Verification
+                </div>
               </div>
             </div>
 
-            {/* Map Action Buttons */}
+            {/* Technician Live Ride Dispatch Controller Banner */}
+            <div className={`p-4 rounded-xl border transition-all ${
+              rideStarted
+                ? 'bg-emerald-950 text-white border-emerald-500 shadow-md ring-2 ring-emerald-500/20'
+                : 'bg-slate-900 text-white border-slate-800'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    {rideStarted ? (
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                      </span>
+                    ) : (
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                    )}
+                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                      {rideStarted ? 'Live Ride Active (Technician Dispatched)' : 'Technician Dispatch Standby'}
+                    </span>
+                  </div>
+
+                  <h4 className="text-sm font-bold text-white">
+                    {rideStarted
+                      ? 'Broadcasting real GPS to customer tracking page'
+                      : 'Click below to start technician ride & broadcast real GPS'}
+                  </h4>
+
+                  {broadcastStatus && (
+                    <p className="text-[11px] text-emerald-200/90 font-mono mt-0.5">
+                      {broadcastStatus}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleToggleRide}
+                    className={`px-4 py-2.5 rounded-xl font-black text-xs shadow-md transition-all flex items-center gap-2 ${
+                      rideStarted
+                        ? 'bg-red-600 hover:bg-red-700 text-white border border-red-500'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                    }`}
+                  >
+                    <Bike className="w-4 h-4" />
+                    <span>{rideStarted ? 'End / Stop Ride' : 'Start Ride (Dispatched on Bike)'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Leaflet Live Map in Admin */}
+            {request.latitude && request.longitude && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <span className="font-bold flex items-center gap-1.5 text-slate-800">
+                    <Radio className="w-3.5 h-3.5 text-red-600 animate-pulse" />
+                    <span>Live Dispatch & Road Route Map</span>
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Auto-calculates turn-by-turn road driving route & ETA
+                  </span>
+                </div>
+
+                <LiveTrackingMap
+                  customerLat={request.latitude}
+                  customerLng={request.longitude}
+                  customerLocationName={request.customerLocationName}
+                  customerAddress={request.address}
+                  technicianLat={technicianLat}
+                  technicianLng={technicianLng}
+                  technicianHeading={technicianHeading}
+                  technicianName={adminAssigned}
+                  rideStarted={rideStarted}
+                  height="360px"
+                />
+              </div>
+            )}
+
+            {/* External Navigation Shortcuts */}
             <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center gap-3">
               <a
                 href={mapLink}

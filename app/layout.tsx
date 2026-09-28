@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import 'leaflet/dist/leaflet.css';
 import prisma from '@/lib/prisma';
 import { generateLocalBusinessSchema } from '@/lib/seo';
 import { DEFAULT_SETTINGS } from '@/lib/constants';

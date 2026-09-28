@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import {
   MapPin,
   Send,
@@ -13,8 +14,20 @@ import {
   Calendar,
   Clock,
   ExternalLink,
+  Globe,
+  Compass,
 } from 'lucide-react';
 import BookingSuccessModal from './BookingSuccessModal';
+import { reverseGeocode } from '@/lib/reverse-geocoding';
+
+const LiveTrackingMap = dynamic(() => import('@/components/maps/LiveTrackingMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-48 w-full bg-slate-100 rounded-xl flex items-center justify-center text-xs text-slate-400">
+      Loading pinpoint map...
+    </div>
+  ),
+});
 
 interface ServiceOption {
   id: string;
@@ -52,9 +65,12 @@ export default function ServiceRequestForm({
   const [city, setCity] = useState('Kathmandu');
   const [additionalNotes, setAdditionalNotes] = useState('');
 
-  // Geolocation States
+  // Geolocation & Real Place Verification States
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [customerLocationName, setCustomerLocationName] = useState<string | null>(null);
+  const [detectedIp, setDetectedIp] = useState<string | null>(null);
+  const [accuracyMeters, setAccuracyMeters] = useState<number | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationStatus, setLocationStatus] = useState<string | null>(null);
 
@@ -87,32 +103,56 @@ export default function ServiceRequestForm({
     }
 
     setLocating(true);
-    setLocationStatus('Locating your position via GPS...');
+    setLocationStatus('Connecting to real GPS satellites & detecting IP...');
+
+    // Fetch client IP concurrently
+    fetch('/api/ip')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ip) setDetectedIp(data.ip);
+      })
+      .catch((err) => console.warn('IP lookup error:', err));
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
+        const acc = Math.round(position.coords.accuracy);
         setLatitude(lat);
         setLongitude(lng);
-        setLocating(false);
-        setLocationStatus(`Location acquired: ${lat.toFixed(4)}, ${lng.toFixed(4)}`);
+        setAccuracyMeters(acc);
+
+        try {
+          setLocationStatus('Resolving exact place name & street address...');
+          const geo = await reverseGeocode(lat, lng);
+          setCustomerLocationName(geo.placeName);
+          if (geo.area) setArea(geo.area);
+          if (geo.city) setCity(geo.city);
+          if (geo.fullAddress) {
+            setAddress(geo.fullAddress);
+          }
+          setLocationStatus(`Verified Location: ${geo.placeName}`);
+        } catch (e) {
+          setLocationStatus(`Location acquired: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+        } finally {
+          setLocating(false);
+        }
       },
       (error) => {
         setLocating(false);
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            setLocationStatus('Location access denied. Please type your address manually.');
+            setLocationStatus('GPS permission denied. Please allow location access in your browser or type your address manually.');
             break;
           case error.POSITION_UNAVAILABLE:
-            setLocationStatus('Location information unavailable. Please enter address.');
+            setLocationStatus('GPS signal unavailable. Please type your street address.');
             break;
           default:
-            setLocationStatus('Could not retrieve location. Please enter address manually.');
+            setLocationStatus('Could not retrieve GPS coordinates. Please type your address manually.');
             break;
         }
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 
@@ -171,6 +211,8 @@ export default function ServiceRequestForm({
           city,
           latitude,
           longitude,
+          customerLocationName: customerLocationName || undefined,
+          ipAddress: detectedIp || undefined,
           googleMapsUrl,
           additionalNotes: additionalNotes.trim() || undefined,
         }),
@@ -436,28 +478,90 @@ export default function ServiceRequestForm({
 
           {locationStatus && (
             <div
-              className={`p-3 rounded-md text-xs flex items-center gap-2 ${
+              className={`p-3.5 rounded-xl text-xs space-y-3 transition-all ${
                 latitude && longitude
-                  ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                  ? 'bg-emerald-50/80 border border-emerald-200 text-emerald-950 shadow-xs'
                   : 'bg-amber-50 border border-amber-200 text-amber-800'
               }`}
             >
-              {latitude && longitude ? (
-                <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-              ) : (
-                <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
-              )}
-              <span className="flex-1">{locationStatus}</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 font-bold">
+                  {latitude && longitude ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <MapPin className="w-4 h-4 text-amber-600 shrink-0" />
+                  )}
+                  <span>{locationStatus}</span>
+                </div>
+                {latitude && longitude && (
+                  <a
+                    href={`https://www.google.com/maps?q=${latitude},${longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-700 hover:text-emerald-800 font-bold underline inline-flex items-center gap-1 text-[11px]"
+                  >
+                    <span>Google Maps</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+
+              {/* Verified Place Name, IP & GPS Breakdown Card */}
               {latitude && longitude && (
-                <a
-                  href={`https://www.google.com/maps?q=${latitude},${longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-emerald-700 font-bold underline inline-flex items-center gap-0.5"
-                >
-                  <span>Preview Map</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+                <div className="bg-white/95 rounded-lg border border-emerald-200/80 p-3 space-y-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 block">
+                        Verified Place Name
+                      </span>
+                      <span className="font-extrabold text-slate-900 text-sm flex items-center gap-1">
+                        <span>📍</span>
+                        <span>{customerLocationName || `${area ? area + ', ' : ''}${city}`}</span>
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] uppercase font-extrabold tracking-wider text-slate-500 block">
+                        GPS Precision Coordinates
+                      </span>
+                      <span className="font-mono font-bold text-slate-800 text-xs flex items-center gap-1">
+                        <Compass className="w-3.5 h-3.5 text-red-600" />
+                        <span>{latitude.toFixed(5)}, {longitude.toFixed(5)}</span>
+                        {accuracyMeters && (
+                          <span className="text-[10px] font-sans font-normal text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded">
+                            ±{accuracyMeters}m
+                          </span>
+                        )}
+                      </span>
+                    </div>
+
+                    {detectedIp && (
+                      <div className="sm:col-span-2 pt-1 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500 flex items-center gap-1 font-semibold">
+                          <Globe className="w-3 h-3 text-blue-600" />
+                          <span>Detected Booking IP:</span>
+                        </span>
+                        <span className="font-mono font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          {detectedIp}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Real Pinpoint Map Preview */}
+                  <div className="mt-2 pt-2 border-t border-slate-100">
+                    <span className="text-[11px] font-bold text-slate-700 block mb-1.5 flex items-center gap-1">
+                      <span>Exact Pinpoint Location Preview:</span>
+                    </span>
+                    <LiveTrackingMap
+                      customerLat={latitude}
+                      customerLng={longitude}
+                      customerLocationName={customerLocationName || `${area ? area + ', ' : ''}${city}`}
+                      customerAddress={address}
+                      height="200px"
+                    />
+                  </div>
+                </div>
               )}
             </div>
           )}

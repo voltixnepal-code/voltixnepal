@@ -18,8 +18,22 @@ import {
   Loader2,
   User,
   Zap,
-  Sparkles
+  Sparkles,
+  Radio,
+  Bike,
+  Compass,
+  Globe,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const LiveTrackingMap = dynamic(() => import('@/components/maps/LiveTrackingMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 w-full bg-slate-100 rounded-xl flex items-center justify-center text-xs text-slate-400">
+      Loading live dispatch map...
+    </div>
+  ),
+});
 
 interface ServiceRequestData {
   id: string;
@@ -36,9 +50,19 @@ interface ServiceRequestData {
   address: string;
   area: string | null;
   city: string;
+  customerLocationName?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  ipAddress?: string | null;
   status: string;
   internalNotes: string | null;
   adminAssigned: string | null;
+  rideStarted?: boolean;
+  rideStartedAt?: string | null;
+  technicianLat?: number | null;
+  technicianLng?: number | null;
+  technicianHeading?: number | null;
+  technicianLastUpdate?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -82,6 +106,25 @@ function TrackContent() {
       fetchRequestDetails(initialCode);
     }
   }, [initialCode]);
+
+  // Real-time live polling for technician GPS updates every 3.5 seconds
+  useEffect(() => {
+    if (!request || request.status === 'COMPLETED' || request.status === 'CANCELLED') return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/requests/${encodeURIComponent(request.requestId)}/live-location`);
+        const json = await res.json();
+        if (res.ok && json.success && json.data) {
+          setRequest((prev) => (prev ? { ...prev, ...json.data } : null));
+        }
+      } catch (e) {
+        // silent
+      }
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [request?.requestId, request?.status]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -295,6 +338,74 @@ function TrackContent() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Real-time Technician Live Ride & Pinpoint Map Card */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  {request.rideStarted ? (
+                    <span className="p-2 rounded-lg bg-emerald-600 text-white shadow-xs">
+                      <Bike className="w-5 h-5 animate-bounce" />
+                    </span>
+                  ) : (
+                    <span className="p-2 rounded-lg bg-red-600 text-white shadow-xs">
+                      <MapPin className="w-5 h-5" />
+                    </span>
+                  )}
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm sm:text-base font-extrabold text-slate-900">
+                        {request.rideStarted ? 'Live Electrician Ride on Bike' : 'Service Location & Route Preview'}
+                      </h2>
+                      {request.rideStarted && (
+                        <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-ping"></span>
+                          <span>Live Active</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-500">
+                      {request.rideStarted
+                        ? `${request.adminAssigned || 'Technician Sanjit Mishra'} is on the way with electrical tools on motorbike`
+                        : 'Exact pinpoint customer location & technician dispatch preview'}
+                    </p>
+                  </div>
+                </div>
+
+                {request.customerLocationName && (
+                  <div className="text-right text-xs font-semibold text-slate-700">
+                    <span className="text-[10px] uppercase text-slate-400 block font-bold">Booking Place</span>
+                    <span className="text-red-600 font-extrabold">{request.customerLocationName}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Map Rendering */}
+              {request.latitude && request.longitude ? (
+                <LiveTrackingMap
+                  customerLat={request.latitude}
+                  customerLng={request.longitude}
+                  customerLocationName={request.customerLocationName}
+                  customerAddress={request.address}
+                  technicianLat={request.technicianLat}
+                  technicianLng={request.technicianLng}
+                  technicianHeading={request.technicianHeading}
+                  technicianName={request.adminAssigned || 'Sanjit Mishra'}
+                  rideStarted={Boolean(request.rideStarted)}
+                  height="440px"
+                />
+              ) : (
+                <div className="p-8 rounded-xl bg-slate-50 border border-slate-200 text-center space-y-2">
+                  <MapPin className="w-8 h-8 text-slate-400 mx-auto" />
+                  <div className="text-xs font-bold text-slate-700">
+                    Customer Address: {request.address}, {request.city}
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    GPS coordinates were not submitted during this booking. Our technician will navigate using your written address.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Job Summary Card */}

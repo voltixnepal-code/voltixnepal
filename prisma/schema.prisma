@@ -49,6 +49,18 @@ model ServiceRequest {
   internalNotes    String?
   adminAssigned    String?
 
+  // Real Location & IP Tracking
+  ipAddress        String?
+  customerLocationName String?
+
+  // Real-time Technician Dispatch & Live Tracking
+  rideStarted      Boolean   @default(false)
+  rideStartedAt    DateTime?
+  technicianLat    Float?
+  technicianLng    Float?
+  technicianHeading Float?
+  technicianLastUpdate DateTime?
+
   // Financial & Billing Tracking
   billedAmount     Float?   @default(0)
   paidAmount       Float?   @default(0)
