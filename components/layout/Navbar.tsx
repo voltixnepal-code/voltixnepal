@@ -28,7 +28,7 @@ interface NavbarProps {
 const ADMIN_EMAILS = [
   'voltixnepal@gmail.com',
   'bishaldev949@gmail.com',
-  'sanjit@voltixnepal.com',
+  'info@voltixnepal.com',
 ];
 
 export default function Navbar({ settings }: NavbarProps) {

@@ -33,7 +33,7 @@ export default function Footer({ settings }: FooterProps) {
   const businessName = settings?.businessName || 'VoltixNepal';
   const ownerName = settings?.ownerName || 'Sanjit Mishra';
   const phone = settings?.phone || '+977 9825870047';
-  const email = settings?.email || 'sanjit@voltixnepal.com';
+  const email = settings?.email || 'info@voltixnepal.com';
   const address = settings?.address || 'Kathmandu, Bagmati Province, Nepal';
   const hours = settings?.businessHours || 'Sun - Fri: 7:00 AM - 8:00 PM | Sat: Emergency Only';
   const footerText =

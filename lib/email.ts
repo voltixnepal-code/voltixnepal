@@ -148,11 +148,16 @@ export async function sendAdminNewRequestNotification(
   adminEmailOverride?: string
 ): Promise<{ success: boolean; error?: string }> {
   const transporter = getTransporter();
-  const from = process.env.SMTP_FROM || `"VoltixNepal Dispatch" <voltixnepal@gmail.com>`;
+  const from = process.env.SMTP_FROM || `"Voltix Nepal" <info@voltixnepal.com>`;
+  const replyTo = 'info@voltixnepal.com';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';
 
-  const defaultAdminRecipients = ['voltixnepal@gmail.com', 'bishaldev949@gmail.com'];
-  const to = adminEmailOverride ? [adminEmailOverride] : defaultAdminRecipients;
+  const defaultAdminRecipients = ['info@voltixnepal.com', 'voltixnepal@gmail.com', 'bishaldev949@gmail.com'];
+  const recipients = new Set<string>(defaultAdminRecipients);
+  if (adminEmailOverride && !adminEmailOverride.toLowerCase().includes('sanjit@voltixnepal.com')) {
+    recipients.add(adminEmailOverride.trim());
+  }
+  const to = Array.from(recipients);
 
   const mapLink =
     payload.googleMapsUrl ||
@@ -315,9 +320,13 @@ export async function sendAdminNewRequestNotification(
   try {
     await transporter.sendMail({
       from,
+      replyTo,
       to,
-      subject: `[${payload.urgency}] New Request #${payload.requestId}: ${payload.customerName} — ${payload.serviceName}`,
+      subject: `[Voltix Business] [${payload.urgency}] New Request #${payload.requestId}: ${payload.customerName} — ${payload.serviceName}`,
       html: htmlContent,
+      headers: {
+        'X-Voltix-Category': 'Voltix Business',
+      },
     });
     console.log(`[SMTP Success] Admin notification sent to ${to.join(', ')} for #${payload.requestId}`);
     return { success: true };
@@ -339,7 +348,8 @@ export async function sendCustomerConfirmationEmail(
   }
 
   const transporter = getTransporter();
-  const from = process.env.SMTP_FROM || `"VoltixNepal" <voltixnepal@gmail.com>`;
+  const from = process.env.SMTP_FROM || `"Voltix Nepal" <info@voltixnepal.com>`;
+  const replyTo = 'info@voltixnepal.com';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';
   const businessPhone = businessSettings?.phone || '+977 9825870047';
   const whatsappNumber = (businessSettings?.whatsappNumber || '9779825870047').replace(/\D/g, '');
@@ -457,6 +467,7 @@ export async function sendCustomerConfirmationEmail(
   try {
     await transporter.sendMail({
       from,
+      replyTo,
       to: payload.customerEmail,
       subject: `Service Request Received #${payload.requestId} — VoltixNepal`,
       html: htmlContent,
@@ -490,7 +501,8 @@ export async function sendStatusUpdateEmail(
   }
 
   const transporter = getTransporter();
-  const from = process.env.SMTP_FROM || `"VoltixNepal Service" <voltixnepal@gmail.com>`;
+  const from = process.env.SMTP_FROM || `"Voltix Nepal Service" <info@voltixnepal.com>`;
+  const replyTo = 'info@voltixnepal.com';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';
   const businessPhone = businessSettings?.phone || '+977 9825870047';
   const trackingUrl = `${appUrl}/track?code=${encodeURIComponent(request.requestId)}`;
@@ -600,6 +612,7 @@ export async function sendStatusUpdateEmail(
   try {
     await transporter.sendMail({
       from,
+      replyTo,
       to: request.customerEmail,
       subject: `[Update] Service Request #${request.requestId}: ${currentStatus.label} — VoltixNepal`,
       html: htmlContent,
@@ -632,7 +645,8 @@ export async function sendTechnicianRideStartedEmail(
   }
 
   const transporter = getTransporter();
-  const from = process.env.SMTP_FROM || `"VoltixNepal Dispatch" <voltixnepal@gmail.com>`;
+  const from = process.env.SMTP_FROM || `"Voltix Nepal Dispatch" <info@voltixnepal.com>`;
+  const replyTo = 'info@voltixnepal.com';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';
   const businessPhone = businessSettings?.phone || '+977 9825870047';
   const whatsappNumber = (businessSettings?.whatsappNumber || '9779825870047').replace(/\D/g, '');
@@ -754,6 +768,7 @@ export async function sendTechnicianRideStartedEmail(
   try {
     await transporter.sendMail({
       from,
+      replyTo,
       to: request.customerEmail,
       subject: `🏍️ Electrician Sanjit Mishra is on the way on bike! #${request.requestId} — VoltixNepal`,
       html: htmlContent,
@@ -793,7 +808,8 @@ export async function sendPaymentInvoiceEmail(
   }
 
   const transporter = getTransporter();
-  const from = process.env.SMTP_FROM || `"VoltixNepal Accounts" <voltixnepal@gmail.com>`;
+  const from = process.env.SMTP_FROM || `"Voltix Nepal Accounts" <info@voltixnepal.com>`;
+  const replyTo = 'info@voltixnepal.com';
   const invoiceNumber = `INV-${data.requestId}`;
 
   const formattedBilled = (data.billedAmount || data.paidAmount || 0).toLocaleString('en-IN');
@@ -960,6 +976,7 @@ export async function sendPaymentInvoiceEmail(
   try {
     const mailOptions: any = {
       from,
+      replyTo,
       to: data.customerEmail,
       subject: `[Payment Receipt] Invoice #${invoiceNumber} — VoltixNepal`,
       html: htmlContent,
@@ -992,7 +1009,8 @@ export async function sendNewsletterWelcomeEmail(
   businessSettings?: { phone?: string; whatsappNumber?: string }
 ): Promise<{ success: boolean; error?: string }> {
   const transporter = getTransporter();
-  const from = process.env.SMTP_FROM || `"VoltixNepal Newsletter" <voltixnepal@gmail.com>`;
+  const from = process.env.SMTP_FROM || `"Voltix Nepal" <info@voltixnepal.com>`;
+  const replyTo = 'info@voltixnepal.com';
   const businessPhone = businessSettings?.phone || '+977 9825870047';
 
   const htmlContent = `
@@ -1073,6 +1091,7 @@ export async function sendNewsletterWelcomeEmail(
   try {
     await transporter.sendMail({
       from,
+      replyTo,
       to: subscriberEmail,
       subject: `Welcome to VoltixNepal Electrical Newsletter! ⚡`,
       html: htmlContent,

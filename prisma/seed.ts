@@ -16,7 +16,7 @@ async function main() {
       tagline: 'Professional Electrical Services in Nepal',
       phone: '+977 9825870047',
       whatsappNumber: '9779825870047',
-      email: 'sanjit@voltixnepal.com',
+      email: 'info@voltixnepal.com',
       address: 'Kathmandu, Bagmati Province, Nepal',
       businessHours: 'Sunday - Friday: 7:00 AM - 8:00 PM | Saturday: Emergency Only',
       emergencyAvailable: true,

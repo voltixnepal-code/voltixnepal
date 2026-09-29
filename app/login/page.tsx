@@ -37,7 +37,7 @@ export default function CustomerLoginPage() {
       cleanInput === 'voltixnepal' ||
       cleanInput === 'voltixnepal@gmail.com' ||
       cleanInput === 'bishaldev949@gmail.com' ||
-      cleanInput === 'sanjit@voltixnepal.com' ||
+      cleanInput === 'info@voltixnepal.com' ||
       password === 'Apple@50#';
 
     if (isAdminAttempt) {
@@ -75,7 +75,7 @@ export default function CustomerLoginPage() {
       );
 
       const email = (userCredential.user.email || '').toLowerCase().trim();
-      const adminEmails = ['voltixnepal@gmail.com', 'bishaldev949@gmail.com', 'sanjit@voltixnepal.com'];
+      const adminEmails = ['voltixnepal@gmail.com', 'bishaldev949@gmail.com', 'info@voltixnepal.com'];
 
       if (adminEmails.includes(email)) {
         try {
@@ -136,7 +136,7 @@ export default function CustomerLoginPage() {
       const userEmail = (result.user.email || '').toLowerCase().trim();
 
       // Check if admin Google account
-      const adminEmails = ['voltixnepal@gmail.com', 'bishaldev949@gmail.com', 'sanjit@voltixnepal.com'];
+      const adminEmails = ['voltixnepal@gmail.com', 'bishaldev949@gmail.com', 'info@voltixnepal.com'];
       if (adminEmails.includes(userEmail)) {
         try {
           const adminRes = await fetch('/api/admin/login', {

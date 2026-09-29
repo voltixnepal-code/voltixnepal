@@ -46,7 +46,7 @@ export default function CustomerDashboardPage() {
         return;
       }
       const email = (currentUser.email || '').toLowerCase().trim();
-      const adminEmails = ['voltixnepal@gmail.com', 'bishaldev949@gmail.com', 'sanjit@voltixnepal.com'];
+      const adminEmails = ['voltixnepal@gmail.com', 'bishaldev949@gmail.com', 'info@voltixnepal.com'];
       if (adminEmails.includes(email)) {
         router.push('/admin');
         return;

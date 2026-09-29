@@ -166,7 +166,7 @@ model WebsiteSettings {
   tagline            String   @default("Professional Electrical Services in Nepal")
   phone              String   @default("+977 9800000000")
   whatsappNumber     String   @default("9779800000000")
-  email              String   @default("sanjit@voltixnepal.com")
+  email              String   @default("info@voltixnepal.com")
   address            String   @default("Kathmandu, Bagmati Province, Nepal")
   businessHours      String   @default("Sunday - Friday: 7:00 AM - 8:00 PM | Saturday: Emergency Only")
   emergencyAvailable Boolean  @default(true)

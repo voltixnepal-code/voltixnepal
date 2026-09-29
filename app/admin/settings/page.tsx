@@ -23,7 +23,7 @@ export default function AdminSettingsPage() {
     tagline: 'Professional Electrical Services in Nepal',
     phone: '+977 9800000000',
     whatsappNumber: '9779800000000',
-    email: 'sanjit@voltixnepal.com',
+    email: 'info@voltixnepal.com',
     address: 'Kathmandu, Bagmati Province, Nepal',
     businessHours:
       'Sunday - Friday: 7:00 AM - 8:00 PM | Saturday: Emergency Only',
@@ -238,7 +238,7 @@ export default function AdminSettingsPage() {
                   onChange={(e) =>
                     setSettings({ ...settings, email: e.target.value })
                   }
-                  placeholder="sanjit@voltixnepal.com"
+                  placeholder="info@voltixnepal.com"
                   className="form-input text-xs pl-9"
                 />
               </div>

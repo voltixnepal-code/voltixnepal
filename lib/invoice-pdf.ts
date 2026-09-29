@@ -97,7 +97,7 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .text('Proprietor: Sanjit Mishra (Lead Electrician)', 40, metaTop + 14)
         .text('Kathmandu Valley, Bagmati Province, Nepal', 40, metaTop + 26)
         .text('Phone / WhatsApp: +977 9825870047', 40, metaTop + 38)
-        .text('Email: sanjit@voltixnepal.com  •  voltixnepal.com', 40, metaTop + 50);
+        .text('Email: info@voltixnepal.com  •  voltixnepal.com', 40, metaTop + 50);
 
       doc
         .fontSize(9)
