@@ -178,6 +178,21 @@ export default function AdminRequestDetailPage({
     if (!rideStarted) {
       setRideStarted(true);
       setStatus('IN_PROGRESS');
+      setBroadcastStatus('Ride started! Sending email notification to customer...');
+
+      // Immediately alert server so customer receives ride-started email without delay
+      try {
+        await adminFetch(`/api/requests/${params.id}/live-location`, {
+          method: 'POST',
+          body: JSON.stringify({
+            rideStarted: true,
+          }),
+        });
+        setBroadcastStatus('Ride active! Customer notified by email. Acquiring live GPS...');
+      } catch (err) {
+        console.error('Failed to notify backend of ride start:', err);
+      }
+
       startGpsBroadcast();
     } else {
       await stopGpsBroadcast();

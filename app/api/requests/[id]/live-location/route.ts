@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminRequest } from '@/lib/auth-guard';
+import { sendTechnicianRideStartedEmail } from '@/lib/email';
 
 const db: any = prisma;
 
@@ -116,6 +117,33 @@ export async function POST(
         }
         if (existing.status === 'NEW' || existing.status === 'CONFIRMED' || existing.status === 'CONTACTED') {
           updateData.status = 'IN_PROGRESS';
+        }
+
+        // Send automated email to customer notifying them that the electrician has started the ride!
+        if (existing.customerEmail && (!existing.rideStarted || body.forceEmail)) {
+          try {
+            const settings = await db.websiteSettings.findUnique({
+              where: { id: 'default_settings' },
+            });
+
+            await sendTechnicianRideStartedEmail(
+              {
+                requestId: existing.requestId,
+                customerName: existing.customerName,
+                customerEmail: existing.customerEmail,
+                serviceName: existing.serviceName,
+                address: existing.address,
+                customerLocationName: existing.customerLocationName,
+                adminAssigned: existing.adminAssigned || 'Sanjit Mishra',
+              },
+              {
+                phone: settings?.phone,
+                whatsappNumber: settings?.whatsappNumber,
+              }
+            );
+          } catch (e) {
+            console.error('Error sending ride started email:', e);
+          }
         }
       } else {
         updateData.rideStartedAt = null;

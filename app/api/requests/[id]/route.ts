@@ -152,6 +152,8 @@ export async function PATCH(
       },
     });
 
+    const settings = await prisma.websiteSettings.findUnique({ where: { id: 'default_settings' } });
+
     // Send Payment Receipt & PDF Invoice Email to Customer if payment received or updated
     const isPaymentUpdate =
       (body.paidAmount !== undefined && Number(body.paidAmount) > 0) ||
@@ -159,8 +161,8 @@ export async function PATCH(
       (body.paymentStatus === 'PARTIAL' && Number(updated.paidAmount) > 0);
 
     if (updated.customerEmail && isPaymentUpdate) {
-      prisma.websiteSettings.findUnique({ where: { id: 'default_settings' } }).then((settings) => {
-        sendPaymentInvoiceEmail(
+      try {
+        await sendPaymentInvoiceEmail(
           {
             requestId: updated.requestId,
             customerName: updated.customerName,
@@ -181,14 +183,16 @@ export async function PATCH(
             phone: settings?.phone,
             whatsappNumber: settings?.whatsappNumber,
           }
-        ).catch((err) => console.error('Failed sending payment invoice email:', err));
-      });
+        );
+      } catch (err) {
+        console.error('Failed sending payment invoice email:', err);
+      }
     }
 
-    // Send Status Update Email to Customer in background if status or assigned technician changed (and not just payment)
+    // Send Status Update Email to Customer if status or assigned technician changed (and not just payment)
     if (updated.customerEmail && (body.status !== undefined || body.adminAssigned !== undefined) && !isPaymentUpdate) {
-      prisma.websiteSettings.findUnique({ where: { id: 'default_settings' } }).then((settings) => {
-        sendStatusUpdateEmail(
+      try {
+        await sendStatusUpdateEmail(
           {
             requestId: updated.requestId,
             customerName: updated.customerName,
@@ -203,8 +207,10 @@ export async function PATCH(
             phone: settings?.phone,
             whatsappNumber: settings?.whatsappNumber,
           }
-        ).catch((err) => console.error('Failed sending status email:', err));
-      });
+        );
+      } catch (err) {
+        console.error('Failed sending status email:', err);
+      }
     }
 
     return NextResponse.json({ success: true, request: updated });

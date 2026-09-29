@@ -185,24 +185,25 @@ export async function POST(req: NextRequest) {
       additionalNotes: validated.additionalNotes,
     });
 
-    // Dispatch Emails via SMTP in background (Non-blocking)
+    // Dispatch Emails via SMTP (Awaited with allSettled to guarantee delivery on Vercel/serverless)
     const emailPayload = {
       ...newRequest,
       createdAt: newRequest.createdAt,
     };
 
-    // Send to Admin
-    sendAdminNewRequestNotification(emailPayload, settings?.email).catch((err) =>
-      console.error('Background Admin Email error:', err)
-    );
-
-    // Send confirmation to Customer if email is present
-    if (validated.customerEmail) {
-      sendCustomerConfirmationEmail(emailPayload, {
-        phone: settings?.phone,
-        whatsappNumber: settings?.whatsappNumber,
-        businessName: settings?.businessName,
-      }).catch((err) => console.error('Background Customer Email error:', err));
+    try {
+      await Promise.allSettled([
+        sendAdminNewRequestNotification(emailPayload, settings?.email),
+        validated.customerEmail
+          ? sendCustomerConfirmationEmail(emailPayload, {
+              phone: settings?.phone,
+              whatsappNumber: settings?.whatsappNumber,
+              businessName: settings?.businessName,
+            })
+          : Promise.resolve(),
+      ]);
+    } catch (emailErr) {
+      console.error('SMTP Dispatch error:', emailErr);
     }
 
     return NextResponse.json({

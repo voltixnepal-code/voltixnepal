@@ -42,6 +42,9 @@ function getTransporter() {
       user,
       pass,
     },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
   });
 }
 
@@ -337,8 +340,10 @@ export async function sendCustomerConfirmationEmail(
 
   const transporter = getTransporter();
   const from = process.env.SMTP_FROM || `"VoltixNepal" <voltixnepal@gmail.com>`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';
   const businessPhone = businessSettings?.phone || '+977 9825870047';
-  const whatsappNumber = businessSettings?.whatsappNumber || '9779825870047';
+  const whatsappNumber = (businessSettings?.whatsappNumber || '9779825870047').replace(/\D/g, '');
+  const trackingUrl = `${appUrl}/track?code=${encodeURIComponent(payload.requestId)}`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -402,18 +407,30 @@ export async function sendCustomerConfirmationEmail(
             </td>
           </tr>
 
+          <!-- Online Tracking Button -->
+          <tr>
+            <td style="padding: 0 32px 20px; text-align: center;">
+              <a href="${trackingUrl}" style="display: inline-block; background-color: #dc2626; color: #ffffff; font-size: 14px; font-weight: 800; padding: 13px 30px; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);">
+                📍 Track Order & Technician Live ↗
+              </a>
+              <div style="margin-top: 8px; font-size: 12px; color: #64748b;">
+                Check technician status, GPS dispatch, and service progress online
+              </div>
+            </td>
+          </tr>
+
           <!-- Direct Emergency Contact CTAs -->
           <tr>
             <td style="padding: 0 32px 28px; text-align: center;">
               <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
                 <tr>
                   <td style="padding: 4px;">
-                    <a href="tel:${businessPhone}" style="display: inline-block; background-color: #dc2626; color: #ffffff; font-size: 13px; font-weight: 700; padding: 10px 22px; border-radius: 6px; text-decoration: none;">
+                    <a href="tel:${businessPhone.replace(/\s+/g, '')}" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 12px; font-weight: 700; padding: 10px 22px; border-radius: 6px; text-decoration: none;">
                       Call: ${businessPhone}
                     </a>
                   </td>
                   <td style="padding: 4px;">
-                    <a href="https://wa.me/${whatsappNumber}" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 13px; font-weight: 700; padding: 10px 22px; border-radius: 6px; text-decoration: none;">
+                    <a href="https://wa.me/${whatsappNumber}" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 12px; font-weight: 700; padding: 10px 22px; border-radius: 6px; text-decoration: none;">
                       WhatsApp Us
                     </a>
                   </td>
@@ -596,7 +613,161 @@ export async function sendStatusUpdateEmail(
 }
 
 /**
- * 4. CUSTOMER PAYMENT RECEIPT & INVOICE EMAIL (WITH ATTACHED PDF)
+ * 4. TECHNICIAN RIDE STARTED (LIVE BIKE DISPATCH NOTIFICATION)
+ */
+export async function sendTechnicianRideStartedEmail(
+  request: {
+    requestId: string;
+    customerName: string;
+    customerEmail?: string | null;
+    serviceName: string;
+    address: string;
+    customerLocationName?: string | null;
+    adminAssigned?: string | null;
+  },
+  businessSettings?: { phone?: string; whatsappNumber?: string }
+): Promise<{ success: boolean; error?: string }> {
+  if (!request.customerEmail) {
+    return { success: true };
+  }
+
+  const transporter = getTransporter();
+  const from = process.env.SMTP_FROM || `"VoltixNepal Dispatch" <voltixnepal@gmail.com>`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';
+  const businessPhone = businessSettings?.phone || '+977 9825870047';
+  const whatsappNumber = (businessSettings?.whatsappNumber || '9779825870047').replace(/\D/g, '');
+  const trackingUrl = `${appUrl}/track?code=${encodeURIComponent(request.requestId)}`;
+  const technicianName = request.adminAssigned || 'Sanjit Mishra (Lead Electrician)';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electrician is On The Way — VoltixNepal</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 580px; width: 100%; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; text-align: left;">
+          
+          ${getEmailHeaderHtml('Live Technician Dispatch Active')}
+
+          <!-- Alert Header Banner -->
+          <tr>
+            <td style="background-color: #dc2626; padding: 14px 30px; text-align: center;">
+              <span style="font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 1px;">
+                🏍️ Technician Dispatched on Bike & En Route
+              </span>
+            </td>
+          </tr>
+
+          <!-- Main Notification -->
+          <tr>
+            <td style="padding: 26px 30px 10px;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; line-height: 1.3;">
+                Hello ${request.customerName}, your electrician is on the way!
+              </h1>
+              <p style="margin: 8px 0 0; font-size: 14px; color: #334155; line-height: 1.6;">
+                <strong>${technicianName}</strong> has started the ride on motorbike with diagnostic tools and equipment, heading towards your location.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Destination & Order Details -->
+          <tr>
+            <td style="padding: 10px 30px 20px;">
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 18px 20px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 140px;">Request ID:</td>
+                    <td style="padding: 6px 0; font-size: 14px; font-weight: 800; color: #dc2626; font-family: monospace;">#${request.requestId}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b;">Service:</td>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">${request.serviceName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b;">Assigned Electrician:</td>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">${technicianName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b;">Destination:</td>
+                    <td style="padding: 6px 0; font-size: 13px; color: #0f172a; font-weight: 600;">
+                      ${request.customerLocationName ? `[${request.customerLocationName}] ` : ''}${request.address}
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Big Live Tracking CTA -->
+          <tr>
+            <td style="padding: 0 30px 24px; text-align: center;">
+              <a href="${trackingUrl}" style="display: inline-block; background-color: #dc2626; color: #ffffff; font-size: 14px; font-weight: 800; padding: 14px 32px; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);">
+                🔴 Track Electrician on Live Map ↗
+              </a>
+              <div style="margin-top: 10px; font-size: 12px; color: #64748b;">
+                Watch the technician moving on motorbike in real time with estimated arrival minutes.
+              </div>
+            </td>
+          </tr>
+
+          <!-- Direct Calls & WhatsApp -->
+          <tr>
+            <td style="padding: 0 30px 24px; text-align: center;">
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                <tr>
+                  <td style="padding: 4px;">
+                    <a href="tel:${businessPhone.replace(/\s+/g, '')}" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 12px; font-weight: 700; padding: 9px 18px; border-radius: 6px; text-decoration: none;">
+                      📞 Call Technician: ${businessPhone}
+                    </a>
+                  </td>
+                  <td style="padding: 4px;">
+                    <a href="https://wa.me/${whatsappNumber}" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 12px; font-weight: 700; padding: 9px 18px; border-radius: 6px; text-decoration: none;">
+                      💬 WhatsApp Dispatch
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer with Social Icons -->
+          <tr>
+            <td>
+              ${getEmailFooterHtml(businessSettings)}
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+  try {
+    await transporter.sendMail({
+      from,
+      to: request.customerEmail,
+      subject: `🏍️ Electrician Sanjit Mishra is on the way on bike! #${request.requestId} — VoltixNepal`,
+      html: htmlContent,
+    });
+    console.log(`[SMTP Success] Ride started notification email sent to ${request.customerEmail} for #${request.requestId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('[SMTP Error] Failed sending ride started notification email:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * 5. CUSTOMER PAYMENT RECEIPT & INVOICE EMAIL (WITH ATTACHED PDF)
  */
 export async function sendPaymentInvoiceEmail(
   data: {
