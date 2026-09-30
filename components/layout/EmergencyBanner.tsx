@@ -10,7 +10,7 @@ interface EmergencyBannerProps {
 }
 
 export default function EmergencyBanner({
-  phone = '+977 9800000000',
+  phone = '+977 9825870047',
   announcement = '24/7 Emergency Electrical Breakdown Service Active in Kathmandu Valley',
   active = true,
 }: EmergencyBannerProps) {

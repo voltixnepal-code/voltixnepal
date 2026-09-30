@@ -92,7 +92,7 @@ export default async function ServiceDetailPage({ params }: Props) {
     otherServices = DEFAULT_SERVICES.filter((s) => s.slug !== service.slug).slice(0, 3);
   }
 
-  const businessPhone = settings?.phone || '+977 9800000000';
+  const businessPhone = settings?.phone || '+977 9825870047';
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';
   const serviceSchema = generateServiceSchema(service, baseUrl);
   const breadcrumbSchema = generateBreadcrumbSchema([

@@ -18,8 +18,8 @@ export async function GET(req: NextRequest) {
     const whereClause: any = {};
     if (query) {
       whereClause.OR = [
-        { name: { contains: query } },
-        { email: { contains: query } },
+        { name: { contains: query, mode: 'insensitive' } },
+        { email: { contains: query, mode: 'insensitive' } },
         { phone: { contains: query } },
       ];
     }

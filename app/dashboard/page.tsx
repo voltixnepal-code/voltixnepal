@@ -54,7 +54,11 @@ export default function CustomerDashboardPage() {
       setUser(currentUser);
 
       try {
-        const res = await fetch(`/api/requests?userId=${currentUser.uid}`);
+        const queryParams = new URLSearchParams({
+          userId: currentUser.uid,
+          ...(currentUser.email ? { email: currentUser.email } : {}),
+        });
+        const res = await fetch(`/api/requests?${queryParams.toString()}`);
         const data = await res.json();
         if (data.success) {
           setRequests(data.requests || []);

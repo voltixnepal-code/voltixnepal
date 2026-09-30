@@ -59,7 +59,7 @@ export default function AdminHeroPage() {
       primaryBtnText: 'Request a Service',
       primaryBtnLink: '/request-service',
       secondaryBtnText: 'Call Now',
-      secondaryBtnLink: 'tel:+9779800000000',
+      secondaryBtnLink: 'tel:+9779825870047',
       imageUrl:
         'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1600&q=80',
       isActive: true,

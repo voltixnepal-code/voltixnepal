@@ -100,6 +100,23 @@ export async function POST(req: NextRequest) {
       mapsUrl = `https://www.google.com/maps?q=${validated.latitude},${validated.longitude}`;
     }
 
+    // Try linking with an existing user by userId or email
+    let linkedUserId: string | null = null;
+    if (validated.userId) {
+      const userMatch = await prisma.user.findFirst({
+        where: { OR: [{ id: validated.userId }, { firebaseUid: validated.userId }] },
+        select: { id: true },
+      });
+      if (userMatch) linkedUserId = userMatch.id;
+    }
+    if (!linkedUserId && validated.customerEmail) {
+      const userMatch = await prisma.user.findFirst({
+        where: { email: { equals: validated.customerEmail.trim().toLowerCase(), mode: 'insensitive' } },
+        select: { id: true },
+      });
+      if (userMatch) linkedUserId = userMatch.id;
+    }
+
     // Save to Database with collision-retry mechanism
     let newRequest;
     let requestId = '';
@@ -111,7 +128,7 @@ export async function POST(req: NextRequest) {
         newRequest = await db.serviceRequest.create({
           data: {
             requestId,
-            userId: validated.userId || null,
+            userId: linkedUserId,
             customerName: validated.customerName,
             customerPhone: validated.customerPhone,
             customerEmail: validated.customerEmail || null,
@@ -163,7 +180,7 @@ export async function POST(req: NextRequest) {
     const settings = await prisma.websiteSettings.findUnique({
       where: { id: 'default_settings' },
     });
-    const businessWhatsApp = settings?.whatsappNumber || '9779800000000';
+    const businessWhatsApp = settings?.whatsappNumber || '9779825870047';
 
     // Prepare WhatsApp Click-to-Chat URL
     const whatsappUrl = generateWhatsAppUrl(businessWhatsApp, {
@@ -238,14 +255,35 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
+    const customerEmail = searchParams.get('email');
     const status = searchParams.get('status');
     const urgency = searchParams.get('urgency');
     const query = searchParams.get('q');
 
-    // If fetching for a specific customer
-    if (userId) {
+    // If fetching for a specific customer (by userId or email)
+    if (userId || customerEmail) {
+      const orConditions: any[] = [];
+
+      if (userId) {
+        const user = await prisma.user.findFirst({
+          where: { OR: [{ id: userId }, { firebaseUid: userId }] },
+        });
+        if (user) {
+          orConditions.push({ userId: user.id });
+          if (user.email) {
+            orConditions.push({ customerEmail: { equals: user.email, mode: 'insensitive' } });
+          }
+        } else {
+          orConditions.push({ userId });
+        }
+      }
+
+      if (customerEmail) {
+        orConditions.push({ customerEmail: { equals: customerEmail.trim().toLowerCase(), mode: 'insensitive' } });
+      }
+
       const requests = await prisma.serviceRequest.findMany({
-        where: { userId },
+        where: orConditions.length > 0 ? { OR: orConditions } : {},
         orderBy: { createdAt: 'desc' },
       });
       return NextResponse.json({ success: true, requests });
@@ -265,11 +303,11 @@ export async function GET(req: NextRequest) {
     if (urgency && urgency !== 'ALL') whereClause.urgency = urgency;
     if (query) {
       whereClause.OR = [
-        { customerName: { contains: query } },
+        { customerName: { contains: query, mode: 'insensitive' } },
         { customerPhone: { contains: query } },
-        { requestId: { contains: query } },
-        { address: { contains: query } },
-        { serviceName: { contains: query } },
+        { requestId: { contains: query, mode: 'insensitive' } },
+        { address: { contains: query, mode: 'insensitive' } },
+        { serviceName: { contains: query, mode: 'insensitive' } },
       ];
     }
 

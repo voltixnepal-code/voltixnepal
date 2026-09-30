@@ -8,8 +8,8 @@ interface CtaBannerProps {
 }
 
 export default function CtaBanner({
-  phone = '+977 9800000000',
-  whatsappNumber = '9779800000000',
+  phone = '+977 9825870047',
+  whatsappNumber = '9779825870047',
 }: CtaBannerProps) {
   return (
     <section className="bg-red-600 text-white py-12 md:py-16 w-full">

@@ -53,25 +53,24 @@ export default function Navbar({ settings }: NavbarProps) {
       }
       setIsAdmin(adminDetected);
 
-      // If user signed in with admin email, ensure the admin session cookie is also set
-      if (ADMIN_EMAILS.includes(email) && typeof window !== 'undefined') {
-        fetch('/api/admin/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            usernameOrEmail: email,
-            password: 'Apple@50#',
-          }),
-        })
-          .then((r) => r.json())
-          .then((d) => {
-            if (d.success && d.token) {
-              localStorage.setItem('voltix_admin_token', d.token);
-              localStorage.setItem('voltix_admin_user', JSON.stringify(d.admin));
-              setIsAdmin(true);
-            }
+      // If user signed in with admin email, ensure the admin session cookie is also set securely using their ID token
+      if (ADMIN_EMAILS.includes(email) && firebaseUser && typeof window !== 'undefined') {
+        firebaseUser.getIdToken().then((idToken) => {
+          fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
           })
-          .catch(() => {});
+            .then((r) => r.json())
+            .then((d) => {
+              if (d.success && d.token) {
+                localStorage.setItem('voltix_admin_token', d.token);
+                localStorage.setItem('voltix_admin_user', JSON.stringify(d.admin));
+                setIsAdmin(true);
+              }
+            })
+            .catch(() => {});
+        }).catch(() => {});
       }
     };
 

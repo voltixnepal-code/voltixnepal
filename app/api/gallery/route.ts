@@ -32,10 +32,10 @@ export async function GET(req: NextRequest) {
     if (category && category !== 'ALL') whereClause.category = category;
     if (query) {
       whereClause.OR = [
-        { title: { contains: query } },
-        { description: { contains: query } },
-        { location: { contains: query } },
-        { category: { contains: query } },
+        { title: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+        { location: { contains: query, mode: 'insensitive' } },
+        { category: { contains: query, mode: 'insensitive' } },
       ];
     }
 

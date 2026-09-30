@@ -32,7 +32,7 @@ function getTransporter() {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT || '465', 10);
   const user = process.env.SMTP_USER || 'voltixnepal@gmail.com';
-  const pass = process.env.SMTP_PASSWORD || 'giywifnxmcxgogkg';
+  const pass = process.env.SMTP_PASSWORD || '';
 
   return nodemailer.createTransport({
     host,

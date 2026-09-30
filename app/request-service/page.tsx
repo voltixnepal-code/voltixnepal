@@ -110,11 +110,11 @@ export default async function RequestServicePage({
                 If you are facing an urgent power cut, short circuit, or burning smell, call our helpline directly:
               </p>
               <a
-                href={`tel:${(settings?.phone || '+977 9800000000').replace(/\s+/g, '')}`}
+                href={`tel:${(settings?.phone || '+977 9825870047').replace(/\s+/g, '')}`}
                 className="btn-primary w-full flex items-center justify-center gap-2 text-xs font-bold py-2.5"
               >
                 <Phone className="w-3.5 h-3.5" />
-                <span>Call {settings?.phone || '+977 9800000000'}</span>
+                <span>Call {settings?.phone || '+977 9825870047'}</span>
               </a>
             </div>
 

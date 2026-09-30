@@ -20,7 +20,7 @@ interface AboutSnippetProps {
 
 export default function AboutSnippet({ settings }: AboutSnippetProps) {
   const ownerName      = settings?.ownerName      || 'Sanjit Mishra';
-  const phone          = settings?.phone          || '+977 9800000000';
+  const phone          = settings?.phone          || '+977 9825870047';
   const ownerPhoto     = settings?.aboutOwnerPhoto || 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=1000&q=80';
   const ownerTitle     = settings?.aboutOwnerTitle || 'Lead Electrician & Proprietor';
   const headline       = settings?.aboutHeadline  || 'Experienced Hands-On Electrical Contractor in Kathmandu';

@@ -21,14 +21,14 @@ export default function AdminSettingsPage() {
     businessName: 'VoltixNepal',
     ownerName: 'Sanjit Mishra',
     tagline: 'Professional Electrical Services in Nepal',
-    phone: '+977 9800000000',
-    whatsappNumber: '9779800000000',
+    phone: '+977 9825870047',
+    whatsappNumber: '9779825870047',
     email: 'info@voltixnepal.com',
     address: 'Kathmandu, Bagmati Province, Nepal',
     businessHours:
       'Sunday - Friday: 7:00 AM - 8:00 PM | Saturday: Emergency Only',
     emergencyAvailable: true,
-    emergencyPhone: '+977 9800000000',
+    emergencyPhone: '+977 9825870047',
     googleMapsUrl: 'https://maps.google.com/?q=Kathmandu,Nepal',
     footerText:
       'Professional electrical installation, emergency repair, and maintenance services across Kathmandu Valley. Safety, punctuality, and quality guaranteed by Sanjit Mishra.',

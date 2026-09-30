@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import BookingSuccessModal from './BookingSuccessModal';
 import { reverseGeocode } from '@/lib/reverse-geocoding';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const LiveTrackingMap = dynamic(() => import('@/components/maps/LiveTrackingMap'), {
   ssr: false,
@@ -74,6 +76,9 @@ export default function ServiceRequestForm({
   const [locating, setLocating] = useState(false);
   const [locationStatus, setLocationStatus] = useState<string | null>(null);
 
+  // User auth state
+  const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
+
   // Submission States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -82,8 +87,27 @@ export default function ServiceRequestForm({
     whatsappUrl: string;
   } | null>(null);
 
-  const businessPhone = settings?.phone || '+977 9800000000';
-  const businessWhatsApp = settings?.whatsappNumber || '9779800000000';
+  const businessPhone = settings?.phone || '+977 9825870047';
+  const businessWhatsApp = settings?.whatsappNumber || '9779825870047';
+
+  useEffect(() => {
+    try {
+      const unsub = onAuthStateChanged(auth, (u) => {
+        if (u) {
+          setLoggedInUserId(u.uid);
+          if (u.displayName && !customerName) {
+            setCustomerName(u.displayName);
+          }
+          if (u.email && !customerEmail) {
+            setCustomerEmail(u.email);
+          }
+        }
+      });
+      return () => unsub();
+    } catch (e) {
+      // safe fallback
+    }
+  }, [customerName, customerEmail]);
 
   useEffect(() => {
     if (defaultServiceSlug && services.length > 0) {
@@ -213,6 +237,7 @@ export default function ServiceRequestForm({
           longitude,
           customerLocationName: customerLocationName || undefined,
           ipAddress: detectedIp || undefined,
+          userId: loggedInUserId || undefined,
           googleMapsUrl,
           additionalNotes: additionalNotes.trim() || undefined,
         }),

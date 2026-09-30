@@ -2,33 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import prisma from '@/lib/prisma';
 
+import { verifyIdToken } from '@/lib/firebase-admin';
+
 const loginSchema = z.object({
   usernameOrEmail: z.string().optional(),
   email: z.string().optional(),
   username: z.string().optional(),
-  password: z.string().min(1),
+  password: z.string().optional(),
+  idToken: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const parsed = loginSchema.parse(body);
-
-    const inputIdentifier = (parsed.usernameOrEmail || parsed.username || parsed.email || '').trim().toLowerCase();
-    const password = parsed.password;
-
-    if (!inputIdentifier || !password) {
-      return NextResponse.json(
-        { success: false, message: 'Username/Email and password are required.' },
-        { status: 400 }
-      );
-    }
-
-    // Map username 'voltixnepal' to voltixnepal@gmail.com
-    let normalizedEmail = inputIdentifier;
-    if (inputIdentifier === 'voltixnepal' || inputIdentifier === 'admin') {
-      normalizedEmail = 'voltixnepal@gmail.com';
-    }
 
     const envAdminEmails = (process.env.ADMIN_EMAILS || '')
       .split(',')
@@ -42,14 +29,58 @@ export async function POST(req: NextRequest) {
     const configuredPin = process.env.ADMIN_INITIAL_PIN || 'Apple@50#';
     const adminSecret = process.env.ADMIN_SECRET_KEY || 'voltix-secret-admin-token-super-secure-key';
 
-    const isAllowed = allowedEmails.includes(normalizedEmail) || allowedEmails.includes(inputIdentifier);
-    const isCorrectPin = password === 'Apple@50#' || password === configuredPin || password === 'Voltix2026Admin!';
+    let normalizedEmail = '';
+    let inputIdentifier = '';
 
-    if (!isAllowed || !isCorrectPin) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid admin credentials or unauthorized username/email.' },
-        { status: 401 }
-      );
+    // A. ID Token flow (Secure Firebase verification)
+    if (parsed.idToken) {
+      const decoded = await verifyIdToken(parsed.idToken);
+      if (!decoded || !decoded.email) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid or expired authentication token.' },
+          { status: 401 }
+        );
+      }
+      normalizedEmail = decoded.email.toLowerCase().trim();
+      inputIdentifier = normalizedEmail;
+
+      const isAuthorized =
+        allowedEmails.includes(normalizedEmail) ||
+        decoded.admin === true ||
+        decoded.role === 'ADMIN';
+
+      if (!isAuthorized) {
+        return NextResponse.json(
+          { success: false, message: 'Unauthorized: Admin email required.' },
+          { status: 403 }
+        );
+      }
+    } else {
+      // B. Standard Password Flow
+      inputIdentifier = (parsed.usernameOrEmail || parsed.username || parsed.email || '').trim().toLowerCase();
+      const password = parsed.password;
+
+      if (!inputIdentifier || !password) {
+        return NextResponse.json(
+          { success: false, message: 'Username/Email and password are required.' },
+          { status: 400 }
+        );
+      }
+
+      normalizedEmail = inputIdentifier;
+      if (inputIdentifier === 'voltixnepal' || inputIdentifier === 'admin') {
+        normalizedEmail = 'voltixnepal@gmail.com';
+      }
+
+      const isAllowed = allowedEmails.includes(normalizedEmail) || allowedEmails.includes(inputIdentifier);
+      const isCorrectPin = password === 'Apple@50#' || password === configuredPin || password === 'Voltix2026Admin!';
+
+      if (!isAllowed || !isCorrectPin) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid admin credentials or unauthorized username/email.' },
+          { status: 401 }
+        );
+      }
     }
 
     // Ensure Admin record exists in database if database is reachable
