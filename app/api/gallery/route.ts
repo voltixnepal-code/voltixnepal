@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminRequest } from '@/lib/auth-guard';
 import { z } from 'zod';
+import { extractUrlFromInput } from '@/lib/media-embed';
 
 const createGalleryItemSchema = z.object({
   title: z.string().min(2, 'Title must be at least 2 characters'),
   description: z.string().optional().nullable(),
   mediaType: z.enum(['PHOTO', 'VIDEO']).default('PHOTO'),
-  storageProvider: z.enum(['CLOUDINARY', 'CLOUDFLARE_R2', 'EXTERNAL']).default('CLOUDINARY'),
-  mediaUrl: z.string().url('A valid media URL is required'),
+  storageProvider: z.string().default('EXTERNAL'),
+  mediaUrl: z.string().min(1, 'A valid media URL or embed link is required'),
   thumbnailUrl: z.string().optional().nullable(),
   fileSizeBytes: z.number().optional().nullable(),
   category: z.string().default('House Wiring'),
@@ -69,6 +70,9 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    if (body.mediaUrl) {
+      body.mediaUrl = extractUrlFromInput(body.mediaUrl);
+    }
     const parsed = createGalleryItemSchema.parse(body);
 
     const newItem = await prisma.galleryItem.create({

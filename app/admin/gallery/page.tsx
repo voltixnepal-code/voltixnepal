@@ -21,16 +21,19 @@ import {
   EyeOff,
   Film,
   Sparkles,
-  Info
+  Info,
+  Globe
 } from 'lucide-react';
 import { adminFetch } from '@/lib/admin-fetch';
+import { MediaRenderer, MediaPlatformBadge } from '@/components/gallery/MediaRenderer';
+import { parseMediaUrl, extractUrlFromInput } from '@/lib/media-embed';
 
 interface GalleryItem {
   id: string;
   title: string;
   description: string | null;
   mediaType: 'PHOTO' | 'VIDEO';
-  storageProvider: 'CLOUDINARY' | 'CLOUDFLARE_R2' | 'EXTERNAL';
+  storageProvider: string;
   mediaUrl: string;
   thumbnailUrl: string | null;
   fileSizeBytes: number | null;
@@ -63,6 +66,7 @@ export default function AdminGalleryPage() {
   // Modal / Form state
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<GalleryItem | null>(null);
+  const [previewItem, setPreviewItem] = useState<GalleryItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +75,8 @@ export default function AdminGalleryPage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [mediaType, setMediaType] = useState<'PHOTO' | 'VIDEO'>('PHOTO');
-  const [storageProvider, setStorageProvider] = useState<'CLOUDINARY' | 'CLOUDFLARE_R2'>('CLOUDINARY');
+  const [storageProvider, setStorageProvider] = useState<string>('CLOUDINARY');
+  const [sourceCategory, setSourceCategory] = useState<'PHOTO' | 'VIDEO' | 'EMBED'>('PHOTO');
   const [mediaUrl, setMediaUrl] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [category, setCategory] = useState('House Wiring');
@@ -107,6 +112,7 @@ export default function AdminGalleryPage() {
     setDescription('');
     setMediaType('PHOTO');
     setStorageProvider('CLOUDINARY');
+    setSourceCategory('PHOTO');
     setMediaUrl('');
     setThumbnailUrl('');
     setCategory('House Wiring');
@@ -124,7 +130,15 @@ export default function AdminGalleryPage() {
     setTitle(item.title);
     setDescription(item.description || '');
     setMediaType(item.mediaType);
-    setStorageProvider(item.storageProvider === 'CLOUDFLARE_R2' ? 'CLOUDFLARE_R2' : 'CLOUDINARY');
+    setStorageProvider(item.storageProvider);
+    const parsed = parseMediaUrl(item.mediaUrl, item.mediaType);
+    if (parsed.requiresIframe || (parsed.provider !== 'CLOUDINARY' && parsed.provider !== 'CLOUDFLARE_R2')) {
+      setSourceCategory('EMBED');
+    } else if (item.mediaType === 'VIDEO') {
+      setSourceCategory('VIDEO');
+    } else {
+      setSourceCategory('PHOTO');
+    }
     setMediaUrl(item.mediaUrl);
     setThumbnailUrl(item.thumbnailUrl || '');
     setCategory(item.category);
@@ -137,12 +151,35 @@ export default function AdminGalleryPage() {
     setShowModal(true);
   };
 
-  const handleMediaTypeChange = (type: 'PHOTO' | 'VIDEO') => {
-    setMediaType(type);
-    if (type === 'VIDEO') {
-      setStorageProvider('CLOUDFLARE_R2');
+  const handleSourceTabChange = (tab: 'PHOTO' | 'VIDEO' | 'EMBED') => {
+    setSourceCategory(tab);
+    if (tab === 'PHOTO') {
+      setMediaType('PHOTO');
+      if (storageProvider === 'CLOUDFLARE_R2') setStorageProvider('CLOUDINARY');
+    } else if (tab === 'VIDEO') {
+      setMediaType('VIDEO');
+      if (storageProvider === 'CLOUDINARY') setStorageProvider('CLOUDFLARE_R2');
     } else {
-      setStorageProvider('CLOUDINARY');
+      // Embed / Social tab
+      setStorageProvider('EXTERNAL');
+    }
+  };
+
+  const handleMediaUrlChange = (val: string) => {
+    setMediaUrl(val);
+    const cleaned = extractUrlFromInput(val);
+    if (!cleaned) return;
+
+    const parsed = parseMediaUrl(cleaned, mediaType);
+    if (parsed.embedUrl || parsed.provider !== 'EXTERNAL') {
+      setMediaType(parsed.mediaType);
+      setStorageProvider(parsed.provider);
+      if (parsed.requiresIframe || (parsed.provider !== 'CLOUDINARY' && parsed.provider !== 'CLOUDFLARE_R2')) {
+        setSourceCategory('EMBED');
+      }
+      if (parsed.thumbnailUrl && (!thumbnailUrl || thumbnailUrl.includes('youtube.com') || thumbnailUrl.includes('vumbnail.com'))) {
+        setThumbnailUrl(parsed.thumbnailUrl);
+      }
     }
   };
 
@@ -367,7 +404,7 @@ export default function AdminGalleryPage() {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Upload and showcase on-site photos (Cloudinary, &lt;100MB) and HD work videos (Cloudflare R2, &lt;500MB).
+            Upload on-site photos (Cloudinary &lt;100MB), HD videos (Cloudflare R2 &lt;500MB), or embed ANY video/photo link (YouTube, Facebook, Instagram Reels, TikTok, Vimeo, Google Drive, and any web URL).
           </p>
         </div>
 
@@ -388,39 +425,54 @@ export default function AdminGalleryPage() {
             className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors inline-flex items-center gap-1.5 shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Work Photo / Video</span>
+            <span>Add Work Photo / Video / Link</span>
           </button>
         </div>
       </div>
 
-      {/* Storage Architecture Overview Banner */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Storage & Universal Media Architecture Banner */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50/40 p-4 rounded-xl border border-blue-200 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <ImageIcon className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <ImageIcon className="w-4 h-4" />
           </div>
           <div>
             <h2 className="text-xs font-bold text-blue-950 flex items-center gap-1.5">
-              <span>Cloudinary Photo Storage</span>
-              <span className="bg-blue-200/80 text-blue-800 text-[10px] px-1.5 py-0.2 rounded font-mono">Max 100MB</span>
+              <span>Cloudinary CDN</span>
+              <span className="bg-blue-200/80 text-blue-800 text-[10px] px-1.5 py-0.2 rounded font-mono">&lt;100MB</span>
             </h2>
             <p className="text-[11px] text-blue-800/80 mt-0.5 leading-relaxed">
-              Auto-optimized responsive delivery, WebP format compression, and instant thumbnail generation for site wiring photos.
+              Auto-responsive WebP compression and instant thumbnails for site electrical wiring photos.
             </p>
           </div>
         </div>
 
         <div className="bg-gradient-to-r from-amber-50 to-orange-50/40 p-4 rounded-xl border border-amber-200 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-            <Video className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-lg bg-amber-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Video className="w-4 h-4" />
           </div>
           <div>
             <h2 className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-              <span>Cloudflare R2 Video Engine</span>
-              <span className="bg-amber-200/80 text-amber-800 text-[10px] px-1.5 py-0.2 rounded font-mono">Max 500MB</span>
+              <span>Cloudflare R2 HD</span>
+              <span className="bg-amber-200/80 text-amber-800 text-[10px] px-1.5 py-0.2 rounded font-mono">&lt;500MB</span>
             </h2>
             <p className="text-[11px] text-amber-800/80 mt-0.5 leading-relaxed">
-              Direct high-speed streaming for large on-site diagnostic videos, inverter setups, and electrical repairs with zero egress fees.
+              Zero-egress fast direct streaming for large diagnostic and panel wiring videos.
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-rose-50 to-red-50/40 p-4 rounded-xl border border-rose-200 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <Globe className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-xs font-bold text-rose-950 flex items-center gap-1.5">
+              <span>Universal Social & Web Embed</span>
+              <span className="bg-rose-200/80 text-rose-800 text-[10px] px-1.5 py-0.2 rounded font-mono">Any Link</span>
+            </h2>
+            <p className="text-[11px] text-rose-800/80 mt-0.5 leading-relaxed">
+              Paste YouTube, Facebook, Instagram Reels, TikTok, Vimeo, Drive, or any website video/photo link.
             </p>
           </div>
         </div>
@@ -519,45 +571,28 @@ export default function AdminGalleryPage() {
                 key={item.id}
                 className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden flex flex-col group hover:shadow-md transition-shadow"
               >
-                {/* Media Preview Container */}
-                <div className="relative aspect-video bg-slate-900 overflow-hidden">
-                  {isVideo ? (
-                    <video
-                      src={item.mediaUrl}
-                      poster={item.thumbnailUrl || undefined}
-                      controls
-                      preload="metadata"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <img
-                      src={item.mediaUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  )}
-
-                  {/* Top Badges */}
-                  <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 pointer-events-none">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold text-white shadow-xs ${
-                        isVideo ? 'bg-amber-600' : 'bg-blue-600'
-                      }`}
-                    >
-                      {isVideo ? <Video className="w-3 h-3" /> : <ImageIcon className="w-3 h-3" />}
-                      <span>{item.mediaType}</span>
-                    </span>
-
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-900/80 text-white">
-                      <Cloud className="w-3 h-3 text-cyan-400" />
-                      <span>{item.storageProvider === 'CLOUDFLARE_R2' ? 'R2 (<500MB)' : 'Cloudinary'}</span>
-                    </span>
-                  </div>
+                {/* Media Preview Container with universal embed & photo support */}
+                <div
+                  onClick={() => setPreviewItem(item)}
+                  className="relative aspect-video bg-slate-900 overflow-hidden cursor-pointer"
+                  title="Click to preview player"
+                >
+                  <MediaRenderer
+                    mediaUrl={item.mediaUrl}
+                    thumbnailUrl={item.thumbnailUrl}
+                    mediaType={item.mediaType}
+                    storageProvider={item.storageProvider}
+                    title={item.title}
+                    mode="thumbnail"
+                  />
 
                   {/* Publish Status Badge */}
                   <button
-                    onClick={() => handleTogglePublish(item)}
-                    className="absolute top-2.5 right-2.5"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTogglePublish(item);
+                    }}
+                    className="absolute top-2.5 right-2.5 z-10"
                     title={item.isPublished ? 'Published on live website' : 'Draft / Hidden from public'}
                   >
                     {item.isPublished ? (
@@ -610,6 +645,13 @@ export default function AdminGalleryPage() {
 
                     <div className="flex items-center gap-1">
                       <button
+                        onClick={() => setPreviewItem(item)}
+                        className="p-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                        title="Preview Player in Lightbox"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
+                      <button
                         onClick={() => openEditModal(item)}
                         className="p-1.5 rounded text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                         title="Edit Item"
@@ -649,10 +691,10 @@ export default function AdminGalleryPage() {
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-slate-900">
-                    {editingItem ? 'Edit Work Item' : 'Upload Daily Work Photo / Video'}
+                    {editingItem ? 'Edit Work Item' : 'Upload Daily Work Photo / Video / Link'}
                   </h2>
                   <p className="text-[11px] text-slate-500">
-                    {mediaType === 'VIDEO' ? 'Cloudflare R2 Video Engine (Max 500MB)' : 'Cloudinary Photo CDN (Max 100MB)'}
+                    Supports direct file upload (R2/Cloudinary) or any YouTube, Facebook, Instagram, TikTok, or web link
                   </p>
                 </div>
               </div>
@@ -674,98 +716,202 @@ export default function AdminGalleryPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Media Type Selector */}
+              {/* Media Type & Source Selector */}
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                  Media Type & Storage Engine
+                  Media Type & Source Engine
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <button
                     type="button"
-                    onClick={() => handleMediaTypeChange('PHOTO')}
-                    className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
-                      mediaType === 'PHOTO'
-                        ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20'
+                    onClick={() => handleSourceTabChange('PHOTO')}
+                    className={`p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                      sourceCategory === 'PHOTO'
+                        ? 'border-blue-500 bg-blue-50/50 ring-2 ring-blue-500/20 shadow-xs'
                         : 'border-slate-200 hover:bg-slate-50'
                     }`}
                   >
-                    <ImageIcon className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                    <ImageIcon className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                     <div>
                       <div className="text-xs font-bold text-slate-900">Work Photo</div>
-                      <div className="text-[10px] text-slate-500">Cloudinary (&lt;100MB)</div>
+                      <div className="text-[10px] text-slate-500">Cloudinary / Web Image</div>
                     </div>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleMediaTypeChange('VIDEO')}
-                    className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
-                      mediaType === 'VIDEO'
-                        ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20'
+                    onClick={() => handleSourceTabChange('VIDEO')}
+                    className={`p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                      sourceCategory === 'VIDEO'
+                        ? 'border-amber-500 bg-amber-50/50 ring-2 ring-amber-500/20 shadow-xs'
                         : 'border-slate-200 hover:bg-slate-50'
                     }`}
                   >
-                    <Video className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <Video className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
                       <div className="text-xs font-bold text-slate-900">Work Video</div>
-                      <div className="text-[10px] text-slate-500">Cloudflare R2 (&lt;500MB)</div>
+                      <div className="text-[10px] text-slate-500">Cloudflare R2 / Direct HD</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSourceTabChange('EMBED')}
+                    className={`p-2.5 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
+                      sourceCategory === 'EMBED'
+                        ? 'border-red-500 bg-red-50/50 ring-2 ring-red-500/20 shadow-xs'
+                        : 'border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Globe className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="text-xs font-bold text-slate-900">Social / Web Embed</div>
+                      <div className="text-[10px] text-slate-500">YouTube, FB, Insta, TikTok</div>
                     </div>
                   </button>
                 </div>
               </div>
 
-              {/* Upload Dropzone */}
-              <div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={mediaType === 'VIDEO' ? 'video/*' : 'image/*'}
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
+              {/* Upload Dropzone (For direct Cloudinary or R2 uploads) */}
+              {sourceCategory !== 'EMBED' && (
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={mediaType === 'VIDEO' ? 'video/*' : 'image/*'}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
 
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-300 hover:border-red-500 bg-slate-50 hover:bg-red-50/20 rounded-xl p-5 text-center cursor-pointer transition-colors"
-                >
-                  <Upload className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                  <p className="text-xs font-bold text-slate-800">
-                    Click to browse and upload {mediaType === 'VIDEO' ? 'video (<500MB)' : 'photo (<100MB)'}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    {mediaType === 'VIDEO'
-                      ? 'Supported formats: MP4, WebM, MOV, AVI up to 500MB via Cloudflare R2'
-                      : 'Supported formats: JPG, PNG, WebP, HEIC up to 100MB via Cloudinary'}
-                  </p>
-                </div>
-
-                {uploadProgress !== null && (
-                  <div className="mt-2 space-y-1">
-                    <div className="flex justify-between text-[11px] font-bold text-slate-600">
-                      <span>Uploading to {storageProvider}...</span>
-                      <span>{uploadProgress}%</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-red-600 transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      />
-                    </div>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-slate-300 hover:border-red-500 bg-slate-50 hover:bg-red-50/20 rounded-xl p-4 text-center cursor-pointer transition-colors"
+                  >
+                    <Upload className="w-6 h-6 text-slate-400 mx-auto mb-1.5" />
+                    <p className="text-xs font-bold text-slate-800">
+                      Click to upload {mediaType === 'VIDEO' ? 'video file (<500MB)' : 'photo (<100MB)'}
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      {mediaType === 'VIDEO'
+                        ? 'MP4, WebM, MOV, AVI via Cloudflare R2'
+                        : 'JPG, PNG, WebP, HEIC via Cloudinary CDN'}
+                    </p>
                   </div>
-                )}
-              </div>
+
+                  {uploadProgress !== null && (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex justify-between text-[11px] font-bold text-slate-600">
+                        <span>Uploading to {storageProvider}...</span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-red-600 transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Media URL Preview and Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700">
+                    Media Source URL or Embed Link *
+                  </label>
+                  <span className="text-[10px] text-slate-500">Auto-detected in real-time</span>
+                </div>
+
+                <input
+                  type="text"
+                  required
+                  placeholder={
+                    sourceCategory === 'EMBED'
+                      ? 'Paste YouTube, Facebook video, Instagram Reel, TikTok, Drive, or iframe link...'
+                      : mediaType === 'VIDEO'
+                      ? 'https://r2.voltixnepal.com/videos/... or paste any video link'
+                      : 'https://res.cloudinary.com/... or paste any image link'
+                  }
+                  value={mediaUrl}
+                  onChange={(e) => handleMediaUrlChange(e.target.value)}
+                  className="w-full text-xs font-mono border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
+                />
+
+                {/* Supported sources helper chips */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <span className="text-[10px] text-slate-400 font-medium">Supports:</span>
+                  {[
+                    'YouTube',
+                    'Facebook Video/Reel',
+                    'Instagram Reel',
+                    'TikTok',
+                    'Vimeo',
+                    'Google Drive',
+                    'Cloudflare R2',
+                    'Cloudinary',
+                    'Direct MP4/Image',
+                  ].map((p) => (
+                    <span
+                      key={p}
+                      className="text-[9px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200"
+                    >
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Real-time Live Media & Embed Preview Box */}
+              {mediaUrl.trim() && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2 animate-in fade-in duration-200">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Live Media & Embed Player Preview</span>
+                    </span>
+                    <MediaPlatformBadge
+                      mediaUrl={mediaUrl}
+                      fallbackMediaType={mediaType}
+                      customProvider={storageProvider}
+                    />
+                  </div>
+
+                  <div className="aspect-video w-full rounded-lg overflow-hidden bg-black max-h-56 flex items-center justify-center">
+                    <MediaRenderer
+                      mediaUrl={mediaUrl}
+                      thumbnailUrl={thumbnailUrl}
+                      mediaType={mediaType}
+                      storageProvider={storageProvider}
+                      title={title || 'Preview'}
+                      mode="player"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    This live preview confirms your video or photo displays properly on the public customer gallery.
+                  </p>
+                </div>
+              )}
+
+              {/* Cover Thumbnail URL Input */}
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Media Source URL (Auto-filled on upload or paste direct link)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-bold text-slate-700">
+                    Cover Thumbnail URL (Optional / Auto-generated)
+                  </label>
+                  {thumbnailUrl && (
+                    <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>Thumbnail set</span>
+                    </span>
+                  )}
+                </div>
                 <input
                   type="url"
-                  required
-                  placeholder={mediaType === 'VIDEO' ? 'https://r2.voltixnepal.com/videos/...' : 'https://res.cloudinary.com/...'}
-                  value={mediaUrl}
-                  onChange={(e) => setMediaUrl(e.target.value)}
+                  placeholder="Auto-filled for YouTube; or paste custom image link for video cover"
+                  value={thumbnailUrl}
+                  onChange={(e) => setThumbnailUrl(e.target.value)}
                   className="w-full text-xs font-mono border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-red-600"
                 />
               </div>
@@ -882,6 +1028,86 @@ export default function AdminGalleryPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Lightbox Live Player Preview Modal */}
+      {previewItem && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPreviewItem(null);
+          }}
+          className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 flex min-h-full items-center justify-center bg-black/60 backdrop-blur-xs"
+        >
+          <div className="bg-white rounded-2xl border border-slate-300 ring-1 ring-black/10 max-w-3xl w-full overflow-hidden shadow-2xl space-y-0 my-auto relative animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-white">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded bg-red-50 text-red-600 text-xs font-bold border border-red-200 flex items-center gap-1">
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>{previewItem.category}</span>
+                </span>
+                <MediaPlatformBadge
+                  mediaUrl={previewItem.mediaUrl}
+                  fallbackMediaType={previewItem.mediaType}
+                  customProvider={previewItem.storageProvider}
+                />
+              </div>
+
+              <button
+                onClick={() => setPreviewItem(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Media Player */}
+            <div className="bg-black aspect-video max-h-[480px] flex items-center justify-center relative overflow-hidden">
+              <MediaRenderer
+                mediaUrl={previewItem.mediaUrl}
+                thumbnailUrl={previewItem.thumbnailUrl}
+                mediaType={previewItem.mediaType}
+                storageProvider={previewItem.storageProvider}
+                title={previewItem.title}
+                mode="player"
+                autoPlay={true}
+              />
+            </div>
+
+            {/* Details */}
+            <div className="p-5 sm:p-6 space-y-3 bg-white">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                    {previewItem.title}
+                  </h2>
+                  {previewItem.description && (
+                    <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
+                      {previewItem.description}
+                    </p>
+                  )}
+                </div>
+
+                {previewItem.mediaUrl && (
+                  <a
+                    href={previewItem.mediaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 self-start shrink-0 transition-colors"
+                  >
+                    <span>Open Source</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                  </a>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                <span>Location: {previewItem.location || 'Kathmandu Valley'}</span>
+                <span>Date: {new Date(previewItem.dateTaken).toLocaleDateString()}</span>
+              </div>
+            </div>
           </div>
         </div>
       )}

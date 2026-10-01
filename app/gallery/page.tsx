@@ -19,8 +19,11 @@ import {
   ArrowRight,
   ShieldCheck,
   ChevronDown,
-  Loader2
+  Loader2,
+  Film
 } from 'lucide-react';
+import { MediaRenderer } from '@/components/gallery/MediaRenderer';
+import { parseMediaUrl } from '@/lib/media-embed';
 
 interface GalleryItem {
   id: string;
@@ -232,49 +235,24 @@ export default function GalleryPage() {
                   onClick={() => setActiveItem(item)}
                   className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col group cursor-pointer"
                 >
-                  {/* Media Thumbnail Container */}
+                  {/* Media Thumbnail Container with universal embed & photo support */}
                   <div className="relative aspect-[16/10] bg-slate-900 overflow-hidden">
-                    {isVideo ? (
-                      <>
-                        <video
-                          src={item.mediaUrl}
-                          poster={item.thumbnailUrl || undefined}
-                          preload="metadata"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
-                        />
-                        {/* Play Button Overlay */}
-                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:bg-black/20 transition-colors">
-                          <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-red-600 transition-all duration-200">
-                            <Play className="w-5 h-5 fill-current ml-0.5" />
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <img
-                        src={item.mediaUrl}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    )}
+                    <MediaRenderer
+                      mediaUrl={item.mediaUrl}
+                      thumbnailUrl={item.thumbnailUrl}
+                      mediaType={item.mediaType}
+                      storageProvider={item.storageProvider}
+                      title={item.title}
+                      mode="thumbnail"
+                    />
 
                     {/* Top Category Badge */}
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold text-white shadow-md ${
-                          isVideo ? 'bg-red-600' : 'bg-slate-900/80 backdrop-blur-xs'
-                        }`}
-                      >
-                        {isVideo ? <Video className="w-3.5 h-3.5" /> : <ImageIcon className="w-3.5 h-3.5" />}
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10 pointer-events-none">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold text-white shadow-md bg-slate-900/80 backdrop-blur-xs">
+                        <Layers className="w-3.5 h-3.5" />
                         <span>{item.category}</span>
                       </span>
                     </div>
-
-                    {/* Video HD Tag */}
-                    {isVideo && (
-                      <div className="absolute bottom-3 right-3 px-2 py-0.5 rounded bg-black/80 text-[10px] font-bold text-amber-400">
-                        HD Video
-                      </div>
-                    )}
                   </div>
 
                   {/* Content Section */}
@@ -348,34 +326,43 @@ export default function GalleryPage() {
                 </button>
               </div>
 
-              {/* Media Player / Image Viewer */}
-              <div className="bg-black aspect-video max-h-[480px] flex items-center justify-center relative">
-                {activeItem.mediaType === 'VIDEO' ? (
-                  <video
-                    src={activeItem.mediaUrl}
-                    controls
-                    autoPlay
-                    className="w-full h-full max-h-[480px] object-contain"
-                  />
-                ) : (
-                  <img
-                    src={activeItem.mediaUrl}
-                    alt={activeItem.title}
-                    className="w-full h-full max-h-[480px] object-contain"
-                  />
-                )}
+              {/* Media Player / Image Viewer with universal embed support */}
+              <div className="bg-black aspect-video max-h-[500px] flex items-center justify-center relative overflow-hidden">
+                <MediaRenderer
+                  mediaUrl={activeItem.mediaUrl}
+                  thumbnailUrl={activeItem.thumbnailUrl}
+                  mediaType={activeItem.mediaType}
+                  storageProvider={activeItem.storageProvider}
+                  title={activeItem.title}
+                  mode="player"
+                  autoPlay={true}
+                />
               </div>
 
               {/* Modal Content Details */}
               <div className="p-5 sm:p-6 space-y-4 bg-white">
-                <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">
-                    {activeItem.title}
-                  </h2>
-                  {activeItem.description && (
-                    <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-                      {activeItem.description}
-                    </p>
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+                      {activeItem.title}
+                    </h2>
+                    {activeItem.description && (
+                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                        {activeItem.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {activeItem.mediaUrl && (
+                    <a
+                      href={activeItem.mediaUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold inline-flex items-center gap-1.5 self-start shrink-0 transition-colors"
+                    >
+                      <span>Open Source</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+                    </a>
                   )}
                 </div>
 

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminRequest } from '@/lib/auth-guard';
 
+import { extractUrlFromInput } from '@/lib/media-embed';
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -41,6 +43,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
+    const cleanMediaUrl = body.mediaUrl !== undefined ? extractUrlFromInput(body.mediaUrl) : undefined;
 
     const updatedItem = await prisma.galleryItem.update({
       where: { id: params.id },
@@ -49,7 +52,7 @@ export async function PATCH(
         description: body.description !== undefined ? body.description : undefined,
         mediaType: body.mediaType !== undefined ? body.mediaType : undefined,
         storageProvider: body.storageProvider !== undefined ? body.storageProvider : undefined,
-        mediaUrl: body.mediaUrl !== undefined ? body.mediaUrl : undefined,
+        mediaUrl: cleanMediaUrl,
         thumbnailUrl: body.thumbnailUrl !== undefined ? body.thumbnailUrl : undefined,
         category: body.category !== undefined ? body.category : undefined,
         location: body.location !== undefined ? body.location : undefined,
