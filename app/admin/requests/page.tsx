@@ -233,7 +233,7 @@ function AdminRequestsContent() {
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <div className="flex items-center gap-1.5">
                         <span className="font-bold text-slate-900 group-hover:text-red-600 transition-colors">
                           {req.customerName}
@@ -261,7 +261,7 @@ function AdminRequestsContent() {
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <PaymentBadge
                         status={req.paymentStatus}
                         amount={req.paidAmount || req.billedAmount}

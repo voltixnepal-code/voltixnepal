@@ -17,11 +17,10 @@ export function CustomerLoyaltyBadge({
   if (safeCount === 1) {
     return (
       <span
-        title="1st Booking (New Customer)"
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 ${className}`}
+        title="1st Booking"
+        className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200 whitespace-nowrap shrink-0 ${className}`}
       >
-        <span className="font-extrabold text-slate-800">x1</span>
-        {showText && <span className="text-[9px] text-slate-500 font-medium">New</span>}
+        x1
       </span>
     );
   }
@@ -30,11 +29,10 @@ export function CustomerLoyaltyBadge({
     return (
       <span
         title="2nd Booking (Returning Customer)"
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shadow-2xs ${className}`}
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 whitespace-nowrap shrink-0 ${className}`}
       >
-        <Repeat className="w-2.5 h-2.5 text-blue-600 shrink-0" />
-        <span className="font-extrabold text-blue-700">x2</span>
-        {showText && <span className="text-[9px] text-blue-600 font-semibold">Returning</span>}
+        <span>x2</span>
+        {showText && <span className="text-[9px] font-medium text-blue-600">repeat</span>}
       </span>
     );
   }
@@ -43,24 +41,23 @@ export function CustomerLoyaltyBadge({
     return (
       <span
         title="3rd Booking (Loyal Customer)"
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs ${className}`}
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 whitespace-nowrap shrink-0 ${className}`}
       >
-        <Sparkles className="w-2.5 h-2.5 text-amber-600 shrink-0" />
-        <span className="font-extrabold text-amber-800">x3</span>
-        {showText && <span className="text-[9px] text-amber-700 font-bold">Loyal Client</span>}
+        <span>x3</span>
+        {showText && <span className="text-[9px] font-medium text-amber-700">loyal</span>}
       </span>
     );
   }
 
-  // 4+ VIP Client
+  // 4+ VIP Client - Compact, stable, single-line, professional
   return (
     <span
-      title={`${safeCount} Bookings (VIP Regular Client)`}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-purple-50 to-pink-50 text-purple-900 border border-purple-300 shadow-2xs ${className}`}
+      title={`${safeCount} Bookings (VIP Customer)`}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 whitespace-nowrap shrink-0 ${className}`}
     >
       <Crown className="w-2.5 h-2.5 text-purple-600 shrink-0" />
-      <span className="font-extrabold text-purple-900">x{safeCount}</span>
-      {showText && <span className="text-[9px] text-purple-700 font-bold">VIP Regular</span>}
+      <span>x{safeCount}</span>
+      {showText && <span className="text-[9px] font-semibold text-purple-700">VIP</span>}
     </span>
   );
 }
@@ -78,10 +75,10 @@ export function PaymentBadge({
 
   if (status === 'PAID') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap shrink-0">
         <span>Rs. {formattedAmount}</span>
-        <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-emerald-100 text-emerald-800 font-extrabold">
-          Paid ({method || 'Cash'})
+        <span className="text-[9px] uppercase px-1 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+          Paid {method ? `(${method})` : ''}
         </span>
       </span>
     );
@@ -89,10 +86,10 @@ export function PaymentBadge({
 
   if (status === 'PARTIAL') {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300">
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200 whitespace-nowrap shrink-0">
         <span>Rs. {formattedAmount}</span>
-        <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-amber-100 text-amber-900 font-extrabold">
-          Partial Paid
+        <span className="text-[9px] uppercase px-1 py-0.5 rounded bg-amber-100 text-amber-900 font-bold">
+          Partial
         </span>
       </span>
     );
@@ -100,9 +97,9 @@ export function PaymentBadge({
 
   if (amount > 0) {
     return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-700 border border-red-200 whitespace-nowrap shrink-0">
         <span>Rs. {formattedAmount}</span>
-        <span className="text-[9px] uppercase px-1 py-0.2 rounded bg-red-100 text-red-800 font-extrabold">
+        <span className="text-[9px] uppercase px-1 py-0.5 rounded bg-red-100 text-red-800 font-bold">
           Unpaid
         </span>
       </span>
@@ -110,7 +107,7 @@ export function PaymentBadge({
   }
 
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200 whitespace-nowrap shrink-0">
       Quote Pending
     </span>
   );
