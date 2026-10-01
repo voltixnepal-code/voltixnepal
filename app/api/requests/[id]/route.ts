@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { verifyAdminRequest } from '@/lib/auth-guard';
-import { sendStatusUpdateEmail, sendPaymentInvoiceEmail } from '@/lib/email';
+import {
+  sendStatusUpdateEmail,
+  sendPaymentInvoiceEmail,
+  sendOrderAcceptedEmail,
+  sendOrderDeclinedEmail,
+} from '@/lib/email';
 
 export async function GET(
   req: NextRequest,
@@ -106,14 +111,28 @@ export async function PATCH(
       paidAt = null;
     }
 
+    let targetStatus = body.status !== undefined ? body.status : existing.status;
+    let targetInternalNotes =
+      body.internalNotes !== undefined
+        ? body.internalNotes
+        : existing.internalNotes;
+
+    if (body.action === 'ACCEPT') {
+      targetStatus = 'CONFIRMED';
+    } else if (body.action === 'DECLINE') {
+      targetStatus = 'CANCELLED';
+      if (body.declineReason) {
+        targetInternalNotes = targetInternalNotes
+          ? `${targetInternalNotes}\n[Decline Reason]: ${body.declineReason}`
+          : `[Decline Reason]: ${body.declineReason}`;
+      }
+    }
+
     const updated = await prisma.serviceRequest.update({
       where: { id: existing.id },
       data: {
-        status: body.status !== undefined ? body.status : existing.status,
-        internalNotes:
-          body.internalNotes !== undefined
-            ? body.internalNotes
-            : existing.internalNotes,
+        status: targetStatus,
+        internalNotes: targetInternalNotes,
         adminAssigned:
           body.adminAssigned !== undefined
             ? body.adminAssigned
@@ -189,27 +208,57 @@ export async function PATCH(
       }
     }
 
-    // Send Status Update Email to Customer if status or assigned technician changed (and not just payment)
-    if (updated.customerEmail && (body.status !== undefined || body.adminAssigned !== undefined) && !isPaymentUpdate) {
+    // Send Status / Decision Update Email to Customer
+    if (updated.customerEmail && (body.action !== undefined || body.status !== undefined || body.adminAssigned !== undefined) && !isPaymentUpdate) {
       try {
-        await sendStatusUpdateEmail(
-          {
-            requestId: updated.requestId,
-            customerName: updated.customerName,
-            customerEmail: updated.customerEmail,
-            serviceName: updated.serviceName,
-            status: updated.status,
-            internalNotes: updated.internalNotes,
-            adminAssigned: updated.adminAssigned,
-            address: updated.address,
-          },
-          {
-            phone: settings?.phone,
-            whatsappNumber: settings?.whatsappNumber,
-          }
-        );
+        const contactSettings = {
+          phone: settings?.phone,
+          whatsappNumber: settings?.whatsappNumber,
+        };
+
+        if (body.action === 'ACCEPT' || (body.status === 'CONFIRMED' && existing.status === 'NEW')) {
+          await sendOrderAcceptedEmail(
+            {
+              requestId: updated.requestId,
+              customerName: updated.customerName,
+              customerEmail: updated.customerEmail,
+              serviceName: updated.serviceName,
+              adminAssigned: updated.adminAssigned,
+              address: `${updated.address}${updated.area ? `, ${updated.area}` : ''}, ${updated.city}`,
+              preferredDate: updated.preferredDate,
+              preferredTime: updated.preferredTime,
+              internalNotes: updated.internalNotes,
+            },
+            contactSettings
+          );
+        } else if (body.action === 'DECLINE' || (body.status === 'CANCELLED' && existing.status !== 'CANCELLED')) {
+          await sendOrderDeclinedEmail(
+            {
+              requestId: updated.requestId,
+              customerName: updated.customerName,
+              customerEmail: updated.customerEmail,
+              serviceName: updated.serviceName,
+              declineReason: body.declineReason || undefined,
+            },
+            contactSettings
+          );
+        } else {
+          await sendStatusUpdateEmail(
+            {
+              requestId: updated.requestId,
+              customerName: updated.customerName,
+              customerEmail: updated.customerEmail,
+              serviceName: updated.serviceName,
+              status: updated.status,
+              internalNotes: updated.internalNotes,
+              adminAssigned: updated.adminAssigned,
+              address: updated.address,
+            },
+            contactSettings
+          );
+        }
       } catch (err) {
-        console.error('Failed sending status email:', err);
+        console.error('Failed sending order decision/status email:', err);
       }
     }
 

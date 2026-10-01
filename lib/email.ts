@@ -626,6 +626,300 @@ export async function sendStatusUpdateEmail(
 }
 
 /**
+ * 3a. ORDER ACCEPTED & CONFIRMED NOTIFICATION EMAIL
+ */
+export async function sendOrderAcceptedEmail(
+  request: {
+    requestId: string;
+    customerName: string;
+    customerEmail?: string | null;
+    serviceName: string;
+    adminAssigned?: string | null;
+    address: string;
+    preferredDate?: string | null;
+    preferredTime?: string | null;
+    internalNotes?: string | null;
+  },
+  businessSettings?: { phone?: string; whatsappNumber?: string }
+): Promise<{ success: boolean; error?: string }> {
+  if (!request.customerEmail) {
+    return { success: true };
+  }
+
+  const transporter = getTransporter();
+  const from = process.env.SMTP_FROM || `"Voltix Nepal" <info@voltixnepal.com>`;
+  const replyTo = 'info@voltixnepal.com';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://voltixnepal.com';
+  const businessPhone = businessSettings?.phone || '+977 9825870047';
+  const whatsappNumber = (businessSettings?.whatsappNumber || '9779825870047').replace(/\D/g, '');
+  const trackingUrl = `${appUrl}/track?code=${encodeURIComponent(request.requestId)}`;
+  const technicianName = request.adminAssigned || 'Sanjit Mishra (Lead Electrician)';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Accepted & Confirmed — #${request.requestId}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 580px; width: 100%; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; text-align: left;">
+          
+          ${getEmailHeaderHtml('Order Accepted & Confirmed')}
+
+          <!-- Accepted Banner -->
+          <tr>
+            <td style="background-color: #16a34a; padding: 12px 24px; text-align: center;">
+              <span style="font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">
+                ✓ Service Order Accepted & Confirmed
+              </span>
+            </td>
+          </tr>
+
+          <!-- Main Greeting -->
+          <tr>
+            <td style="padding: 24px 30px 10px;">
+              <h1 style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a;">
+                Great news, ${request.customerName}!
+              </h1>
+              <p style="margin: 8px 0 0; font-size: 14px; color: #334155; line-height: 1.6;">
+                Your service order for <strong>${request.serviceName}</strong> has been <strong>accepted and confirmed</strong> by our operations team. A certified electrical technician is assigned to your job.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Details Card -->
+          <tr>
+            <td style="padding: 10px 30px 20px;">
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px 20px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse: collapse;">
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b; width: 140px;">Request ID:</td>
+                    <td style="padding: 6px 0; font-size: 14px; font-weight: 800; color: #16a34a; font-family: monospace;">#${request.requestId}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b;">Service:</td>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">${request.serviceName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b;">Assigned Electrician:</td>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">${technicianName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b;">Service Location:</td>
+                    <td style="padding: 6px 0; font-size: 13px; color: #0f172a; font-weight: 500;">${request.address}</td>
+                  </tr>
+                  ${request.preferredDate ? `
+                  <tr>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 600; color: #64748b;">Scheduled For:</td>
+                    <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #0f172a;">
+                      ${request.preferredDate} ${request.preferredTime ? `(${request.preferredTime})` : ''}
+                    </td>
+                  </tr>
+                  ` : ''}
+                </table>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Track CTA Button -->
+          <tr>
+            <td style="padding: 0 30px 24px; text-align: center;">
+              <a href="${trackingUrl}" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 13px; font-weight: 700; padding: 13px 30px; border-radius: 8px; text-decoration: none; box-shadow: 0 4px 10px rgba(22, 163, 74, 0.25);">
+                📍 Track Order Live Online ↗
+              </a>
+              <div style="margin-top: 10px; font-size: 12px; color: #64748b;">
+                You can view technician arrival, GPS dispatch status, and job logs anytime.
+              </div>
+            </td>
+          </tr>
+
+          <!-- Phone & WhatsApp Contact -->
+          <tr>
+            <td style="padding: 0 30px 24px; text-align: center;">
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                <tr>
+                  <td style="padding: 4px;">
+                    <a href="tel:${businessPhone.replace(/\s+/g, '')}" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 12px; font-weight: 700; padding: 10px 20px; border-radius: 6px; text-decoration: none;">
+                      📞 Call: ${businessPhone}
+                    </a>
+                  </td>
+                  <td style="padding: 4px;">
+                    <a href="https://wa.me/${whatsappNumber}" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 12px; font-weight: 700; padding: 10px 20px; border-radius: 6px; text-decoration: none;">
+                      💬 WhatsApp Us
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td>
+              ${getEmailFooterHtml(businessSettings)}
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+  try {
+    await transporter.sendMail({
+      from,
+      replyTo,
+      to: request.customerEmail,
+      subject: `✓ Order Accepted & Confirmed #${request.requestId} — VoltixNepal`,
+      html: htmlContent,
+    });
+    console.log(`[SMTP Success] Order accepted email sent to ${request.customerEmail} for #${request.requestId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('[SMTP Error] Failed sending order accepted email:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * 3b. ORDER DECLINED / CANCELLED NOTIFICATION EMAIL
+ */
+export async function sendOrderDeclinedEmail(
+  request: {
+    requestId: string;
+    customerName: string;
+    customerEmail?: string | null;
+    serviceName: string;
+    declineReason?: string | null;
+  },
+  businessSettings?: { phone?: string; whatsappNumber?: string }
+): Promise<{ success: boolean; error?: string }> {
+  if (!request.customerEmail) {
+    return { success: true };
+  }
+
+  const transporter = getTransporter();
+  const from = process.env.SMTP_FROM || `"Voltix Nepal" <info@voltixnepal.com>`;
+  const replyTo = 'info@voltixnepal.com';
+  const businessPhone = businessSettings?.phone || '+977 9825870047';
+  const whatsappNumber = (businessSettings?.whatsappNumber || '9779825870047').replace(/\D/g, '');
+
+  const reasonText = request.declineReason || 'Our technicians are fully occupied or currently unavailable in your requested location.';
+
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Service Request #${request.requestId} Update</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0f172a;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 580px; width: 100%; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; text-align: left;">
+          
+          ${getEmailHeaderHtml('Service Request Update')}
+
+          <!-- Header Notice -->
+          <tr>
+            <td style="background-color: #ef4444; padding: 12px 24px; text-align: center;">
+              <span style="font-size: 13px; font-weight: 800; color: #ffffff; text-transform: uppercase; letter-spacing: 0.5px;">
+                Service Request Notice
+              </span>
+            </td>
+          </tr>
+
+          <!-- Main Greeting -->
+          <tr>
+            <td style="padding: 24px 30px 10px;">
+              <h1 style="margin: 0; font-size: 19px; font-weight: 800; color: #0f172a;">
+                Hello ${request.customerName},
+              </h1>
+              <p style="margin: 8px 0 0; font-size: 14px; color: #334155; line-height: 1.6;">
+                Thank you for considering VoltixNepal. We regret to inform you that we are currently unable to accept your service request for <strong>${request.serviceName}</strong> (Order <strong>#${request.requestId}</strong>).
+              </p>
+            </td>
+          </tr>
+
+          <!-- Reason Card -->
+          <tr>
+            <td style="padding: 10px 30px 20px;">
+              <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px 20px;">
+                <div style="font-size: 12px; font-weight: 700; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                  Reason / Operational Notice:
+                </div>
+                <div style="font-size: 13px; color: #7f1d1d; line-height: 1.5;">
+                  ${reasonText}
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Emergency or Direct Call -->
+          <tr>
+            <td style="padding: 0 30px 24px; text-align: center;">
+              <p style="margin: 0 0 14px; font-size: 13px; color: #64748b;">
+                If you have an urgent electrical emergency or questions regarding this notice, please contact our lead electrician directly:
+              </p>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                <tr>
+                  <td style="padding: 4px;">
+                    <a href="tel:${businessPhone.replace(/\s+/g, '')}" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 12px; font-weight: 700; padding: 10px 22px; border-radius: 6px; text-decoration: none;">
+                      📞 Call Helpline: ${businessPhone}
+                    </a>
+                  </td>
+                  <td style="padding: 4px;">
+                    <a href="https://wa.me/${whatsappNumber}" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 12px; font-weight: 700; padding: 10px 22px; border-radius: 6px; text-decoration: none;">
+                      💬 WhatsApp Us
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td>
+              ${getEmailFooterHtml(businessSettings)}
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+  try {
+    await transporter.sendMail({
+      from,
+      replyTo,
+      to: request.customerEmail,
+      subject: `Update on Service Request #${request.requestId} — VoltixNepal`,
+      html: htmlContent,
+    });
+    console.log(`[SMTP Success] Order declined email sent to ${request.customerEmail} for #${request.requestId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('[SMTP Error] Failed sending order declined email:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
  * 4. TECHNICIAN RIDE STARTED (LIVE BIKE DISPATCH NOTIFICATION)
  */
 export async function sendTechnicianRideStartedEmail(

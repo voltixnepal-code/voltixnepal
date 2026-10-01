@@ -22,6 +22,8 @@ import {
   Video,
   Award,
   ScanSearch,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import BrandLogo from '@/components/common/BrandLogo';
 
@@ -77,6 +79,37 @@ export default function AdminSidebar() {
     }
   };
 
+  const [requestsOpen, setRequestsOpen] = useState(true);
+  const [currentStatus, setCurrentStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    const syncStatus = () => {
+      if (typeof window !== 'undefined') {
+        const sp = new URLSearchParams(window.location.search);
+        setCurrentStatus(sp.get('status'));
+      }
+    };
+    syncStatus();
+
+    window.addEventListener('popstate', syncStatus);
+    window.addEventListener('admin-request-status-changed', syncStatus);
+    const interval = setInterval(syncStatus, 300);
+
+    return () => {
+      window.removeEventListener('popstate', syncStatus);
+      window.removeEventListener('admin-request-status-changed', syncStatus);
+      clearInterval(interval);
+    };
+  }, [pathname]);
+
+  const requestSubmenu = [
+    { label: 'Contacted', status: 'CONTACTED' },
+    { label: 'Confirmed', status: 'CONFIRMED' },
+    { label: 'In Progress', status: 'IN_PROGRESS' },
+    { label: 'Completed', status: 'COMPLETED' },
+    { label: 'Cancelled', status: 'CANCELLED' },
+  ];
+
   const sidebarContent = (
     <div className="flex flex-col h-full bg-black text-neutral-300">
       {/* Brand Header */}
@@ -94,10 +127,97 @@ export default function AdminSidebar() {
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 bg-black">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive =
-            item.href === '/admin'
-              ? pathname === '/admin'
-              : pathname.startsWith(item.href);
+          const isRequests = item.href === '/admin/requests';
+          const isOverview = item.href === '/admin';
+          const isActive = isOverview
+            ? pathname === '/admin'
+            : pathname.startsWith(item.href);
+
+          if (isRequests) {
+            const isRequestsActive = pathname.startsWith('/admin/requests');
+            const isPrimaryNewActive = isRequestsActive && (!currentStatus || currentStatus === 'NEW');
+
+            return (
+              <div key={item.label} className="space-y-1">
+                <div className="flex items-center">
+                  <Link
+                    href="/admin/requests"
+                    onClick={() => {
+                      setCurrentStatus('NEW');
+                      onCloseMobile();
+                    }}
+                    className={`flex-1 flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                      isPrimaryNewActive
+                        ? 'bg-red-600 text-white shadow-xs'
+                        : isRequestsActive
+                        ? 'text-white bg-neutral-900'
+                        : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        isPrimaryNewActive
+                          ? 'bg-white/20 text-white'
+                          : 'bg-neutral-800 text-neutral-400'
+                      }`}
+                    >
+                      New
+                    </span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setRequestsOpen((prev) => !prev);
+                    }}
+                    className="p-2 text-neutral-400 hover:text-white transition-colors"
+                    aria-label="Toggle service requests submenu"
+                  >
+                    {requestsOpen ? (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Submenu for Service Request statuses */}
+                {requestsOpen && (
+                  <div className="ml-4 pl-3 border-l border-neutral-800/80 space-y-1 py-1">
+                    {requestSubmenu.map((sub) => {
+                      const isSubActive =
+                        isRequestsActive && currentStatus === sub.status;
+                      return (
+                        <Link
+                          key={sub.status}
+                          href={`/admin/requests?status=${sub.status}`}
+                          onClick={() => {
+                            setCurrentStatus(sub.status);
+                            onCloseMobile();
+                          }}
+                          className={`flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                            isSubActive
+                              ? 'bg-neutral-800 text-white font-semibold border-l-2 border-red-500 pl-2'
+                              : 'text-neutral-400 hover:text-white hover:bg-neutral-900/60'
+                          }`}
+                        >
+                          <span>{sub.label}</span>
+                          {sub.status === 'COMPLETED' && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          }
 
           return (
             <Link

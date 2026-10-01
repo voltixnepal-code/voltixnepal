@@ -1,7 +1,7 @@
 'use client';
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Search,
   Filter,
@@ -13,16 +13,31 @@ import {
   Calendar,
   AlertCircle,
   CreditCard,
+  ChevronRight,
 } from 'lucide-react';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
 import { CustomerLoyaltyBadge, PaymentBadge } from '@/components/admin/CustomerLoyaltyBadge';
 
-export default function AdminRequestsPage() {
-  const [requests, setRequests] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('ALL');
+function AdminRequestsContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlStatus = searchParams.get('status');
+
+  // Default to 'NEW' when on primary requests page without parameter
+  const [statusFilter, setStatusFilter] = useState(urlStatus || 'NEW');
   const [urgencyFilter, setUrgencyFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Sync state if URL changes (e.g. clicking sidebar submenu)
+  useEffect(() => {
+    if (urlStatus) {
+      setStatusFilter(urlStatus);
+    } else {
+      setStatusFilter('NEW');
+    }
+  }, [urlStatus]);
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -47,6 +62,20 @@ export default function AdminRequestsPage() {
   useEffect(() => {
     fetchRequests();
   }, [statusFilter, urgencyFilter]);
+
+  const handleStatusChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+    if (newStatus === 'NEW') {
+      router.push('/admin/requests');
+    } else if (newStatus === 'ALL') {
+      router.push('/admin/requests?status=ALL');
+    } else {
+      router.push(`/admin/requests?status=${newStatus}`);
+    }
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('admin-request-status-changed'));
+    }
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +102,35 @@ export default function AdminRequestsPage() {
           <RefreshCw className="w-3.5 h-3.5" />
           <span>Refresh</span>
         </button>
+      </div>
+
+      {/* Quick Status Tabs (New, Contacted, Confirmed, In Progress, Completed, Cancelled, All) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+        {[
+          { label: 'New Orders (Primary)', status: 'NEW' },
+          { label: 'Contacted', status: 'CONTACTED' },
+          { label: 'Confirmed', status: 'CONFIRMED' },
+          { label: 'In Progress', status: 'IN_PROGRESS' },
+          { label: 'Completed', status: 'COMPLETED' },
+          { label: 'Cancelled', status: 'CANCELLED' },
+          { label: 'All Orders', status: 'ALL' },
+        ].map((tab) => {
+          const isActive = statusFilter === tab.status;
+          return (
+            <button
+              key={tab.status}
+              type="button"
+              onClick={() => handleStatusChange(tab.status)}
+              className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap transition-colors ${
+                isActive
+                  ? 'bg-red-600 text-white shadow-xs'
+                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Filters Bar */}
@@ -158,16 +216,17 @@ export default function AdminRequestsPage() {
                   <th className="py-3.5 px-4">Billing & Payment</th>
                   <th className="py-3.5 px-4">Location</th>
                   <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                  <th className="py-3.5 px-4 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {requests.map((req) => (
                   <tr
                     key={req.id}
-                    className="hover:bg-slate-50/80 transition-colors"
+                    onClick={() => router.push(`/admin/requests/${req.id}`)}
+                    className="hover:bg-slate-50 transition-colors cursor-pointer group"
                   >
-                    <td className="py-3.5 px-4 font-mono font-bold text-red-600">
+                    <td className="py-3.5 px-4 font-mono font-bold text-red-600 group-hover:text-red-700">
                       {req.requestId}
                       <div className="mt-1">
                         <UrgencyBadge urgency={req.urgency} />
@@ -176,7 +235,7 @@ export default function AdminRequestsPage() {
 
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-slate-900">
+                        <span className="font-bold text-slate-900 group-hover:text-red-600 transition-colors">
                           {req.customerName}
                         </span>
                         {/* Repeat Customer Work Multiplier Badge */}
@@ -185,6 +244,7 @@ export default function AdminRequestsPage() {
                       <div className="text-[11px] font-mono text-slate-500 flex items-center gap-2 mt-0.5">
                         <a
                           href={`tel:${req.customerPhone}`}
+                          onClick={(e) => e.stopPropagation()}
                           className="hover:text-red-600"
                         >
                           {req.customerPhone}
@@ -229,12 +289,9 @@ export default function AdminRequestsPage() {
                     </td>
 
                     <td className="py-3.5 px-4 text-right">
-                      <Link
-                        href={`/admin/requests/${req.id}`}
-                        className="btn-secondary text-[11px] py-1 px-3 font-semibold hover:bg-slate-100"
-                      >
-                        Manage & Bill
-                      </Link>
+                      <span className="inline-flex items-center text-slate-400 group-hover:text-red-600 transition-colors">
+                        <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -244,5 +301,19 @@ export default function AdminRequestsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AdminRequestsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-20 text-center text-xs text-slate-400">
+          Loading service requests...
+        </div>
+      }
+    >
+      <AdminRequestsContent />
+    </Suspense>
   );
 }

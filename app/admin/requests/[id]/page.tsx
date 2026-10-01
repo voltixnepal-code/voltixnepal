@@ -25,6 +25,8 @@ import {
   DollarSign,
   History,
   Check,
+  XCircle,
+  X,
   Radio,
   Bike,
   Compass,
@@ -74,6 +76,9 @@ export default function AdminRequestDetailPage({
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deciding, setDeciding] = useState(false);
+  const [showDeclineModal, setShowDeclineModal] = useState(false);
+  const [declineReason, setDeclineReason] = useState('Our technicians are fully booked today.');
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const router = useRouter();
 
@@ -242,6 +247,61 @@ export default function AdminRequestDetailPage({
     }
   };
 
+  const handleAcceptOrder = async () => {
+    setDeciding(true);
+    setStatusMsg(null);
+    try {
+      const res = await adminFetch(`/api/requests/${params.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          action: 'ACCEPT',
+          status: 'CONFIRMED',
+          adminAssigned: adminAssigned || 'Sanjit Mishra',
+        }),
+      });
+
+      if (res.ok && res.data?.success) {
+        setRequest(res.data.request);
+        setStatus('CONFIRMED');
+        setStatusMsg('✓ Order Accepted & Confirmed! Confirmation email sent to customer.');
+      } else {
+        throw new Error(res.error || 'Failed to accept order.');
+      }
+    } catch (err: any) {
+      setStatusMsg(`Error: ${err.message}`);
+    } finally {
+      setDeciding(false);
+    }
+  };
+
+  const handleDeclineOrder = async () => {
+    setDeciding(true);
+    setStatusMsg(null);
+    try {
+      const res = await adminFetch(`/api/requests/${params.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          action: 'DECLINE',
+          status: 'CANCELLED',
+          declineReason: declineReason || 'Our technicians are fully booked today.',
+        }),
+      });
+
+      if (res.ok && res.data?.success) {
+        setRequest(res.data.request);
+        setStatus('CANCELLED');
+        setShowDeclineModal(false);
+        setStatusMsg('Order Declined. Notice email sent to customer.');
+      } else {
+        throw new Error(res.error || 'Failed to decline order.');
+      }
+    } catch (err: any) {
+      setStatusMsg(`Error: ${err.message}`);
+    } finally {
+      setDeciding(false);
+    }
+  };
+
   const handleMarkFullPaid = () => {
     const amount = Number(billedAmount) || Number(paidAmount) || 0;
     if (amount > 0) {
@@ -310,7 +370,7 @@ export default function AdminRequestDetailPage({
   const balanceDue = Math.max(0, Number(billedAmount || 0) - Number(paidAmount || 0));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28 md:pb-6">
       {/* Top Navigation */}
       <div className="flex items-center justify-between">
         <Link
@@ -358,12 +418,188 @@ export default function AdminRequestDetailPage({
         </div>
       )}
 
+      {/* 1. Order Decision Action Bar (Accept / Decline) */}
+      {status === 'NEW' || status === 'CONTACTED' ? (
+        <div className="bg-white rounded-lg border border-slate-300 p-5 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-600"></span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                New Order Received • Action Required
+              </span>
+            </div>
+            <h2 className="text-base font-bold text-slate-900">
+              Accept or Decline this Service Request
+            </h2>
+            <p className="text-xs text-slate-500">
+              Accepting confirms the booking and sends a confirmation email with tracking to <strong>{request.customerName}</strong>.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={handleAcceptOrder}
+              disabled={deciding}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-5 rounded-md text-xs flex items-center justify-center gap-1.5 transition-colors shadow-2xs"
+            >
+              {deciding ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Check className="w-4 h-4 stroke-[2.5]" />
+              )}
+              <span>Accept Order</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowDeclineModal(true)}
+              disabled={deciding}
+              className="bg-white hover:bg-red-50 text-red-600 border border-slate-200 hover:border-red-200 font-semibold py-2 px-4 rounded-md text-xs flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Decline Order</span>
+            </button>
+          </div>
+        </div>
+      ) : status === 'CONFIRMED' ? (
+        <div className="bg-white rounded-lg border border-emerald-200 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded bg-emerald-600 text-white flex items-center justify-center shrink-0">
+              <Check className="w-4 h-4 stroke-[3]" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Order Accepted & Confirmed
+              </div>
+              <p className="text-xs text-slate-500">
+                Customer was notified by email. Assigned technician: <strong>{adminAssigned || 'Sanjit Mishra'}</strong>.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowDeclineModal(true)}
+            className="text-xs text-red-600 hover:text-red-700 font-medium px-2.5 py-1 rounded hover:bg-red-50 transition-colors self-start sm:self-auto"
+          >
+            Cancel / Decline Order
+          </button>
+        </div>
+      ) : status === 'CANCELLED' ? (
+        <div className="bg-white rounded-lg border border-red-200 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded bg-red-600 text-white flex items-center justify-center shrink-0">
+              <X className="w-4 h-4 stroke-[3]" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">
+                Order Declined / Cancelled
+              </div>
+              <p className="text-xs text-slate-500">
+                Customer was notified via email.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleAcceptOrder}
+            disabled={deciding}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-1.5 px-3 rounded flex items-center gap-1.5 self-start sm:self-auto"
+          >
+            <Check className="w-3.5 h-3.5" />
+            <span>Re-Open & Accept</span>
+          </button>
+        </div>
+      ) : null}
+
+      {/* Decline Confirmation Modal */}
+      {showDeclineModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-5 shadow-xl space-y-4 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <h3 className="font-bold text-slate-900 text-sm">
+                Decline Service Request
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowDeclineModal(false)}
+                className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600">
+              Declining will cancel this request and send an email notification to <strong>{request.customerName}</strong>.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700 block">
+                Reason for Customer:
+              </label>
+              <div className="grid grid-cols-1 gap-1.5">
+                {[
+                  'Our technicians are fully booked today.',
+                  'Requested location is outside our current service radius.',
+                  'Specialized parts or equipment required are unavailable.',
+                  'Customer requested to cancel.',
+                ].map((reason) => (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => setDeclineReason(reason)}
+                    className={`text-left p-2 rounded text-xs transition-colors border ${
+                      declineReason === reason
+                        ? 'border-red-500 bg-red-50/50 text-red-900 font-semibold'
+                        : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                rows={2}
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                placeholder="Or type custom reason..."
+                className="form-input text-xs w-full mt-1"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowDeclineModal(false)}
+                className="btn-secondary text-xs py-1.5 px-3"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleDeclineOrder}
+                disabled={deciding}
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold text-xs py-1.5 px-4 rounded flex items-center gap-1.5"
+              >
+                {deciding ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <X className="w-3.5 h-3.5" />
+                )}
+                <span>Decline & Send Mail</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Grid: Request Content & Dispatch Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left (8 cols): Information & Location */}
-        <div className="lg:col-span-8 space-y-6">
-          {/* Header Card */}
-          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+        {/* Left (8 cols on desktop) */}
+        <div className="contents lg:flex lg:flex-col lg:col-span-8 space-y-6 w-full">
+          {/* 1. Header Card (order-1 on mobile) */}
+          <div className="order-1 lg:order-none bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -409,203 +645,8 @@ export default function AdminRequestDetailPage({
             )}
           </div>
 
-          {/* Dedicated Financial Billing & Payment Card */}
-          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-emerald-600 text-white shadow-xs">
-                  <Wallet className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">
-                    Customer Payment & Billing
-                  </h3>
-                  <p className="text-[11px] text-slate-500">
-                    Track what the customer paid, amount charged, and payment method
-                  </p>
-                </div>
-              </div>
-
-              <PaymentBadge
-                status={paymentStatus}
-                amount={Number(paidAmount) || Number(billedAmount)}
-                method={paymentMethod}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="form-label text-xs font-bold text-slate-700">
-                  Total Billed Amount (NPR / Rs.)
-                </label>
-                <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
-                    Rs.
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="50"
-                    value={billedAmount}
-                    onChange={(e) => setBilledAmount(e.target.value)}
-                    placeholder="e.g. 1500"
-                    className="form-input pl-10 text-xs font-bold text-slate-900"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="form-label text-xs font-bold text-slate-700">
-                  Amount Paid / Received (NPR / Rs.)
-                </label>
-                <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
-                    Rs.
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    step="50"
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(e.target.value)}
-                    placeholder="e.g. 1500"
-                    className="form-input pl-10 text-xs font-bold text-emerald-700"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="form-label text-xs font-bold text-slate-700">
-                  Payment Status
-                </label>
-                <select
-                  value={paymentStatus}
-                  onChange={(e) => setPaymentStatus(e.target.value)}
-                  className="form-input text-xs font-bold mt-1 bg-white"
-                >
-                  <option value="UNPAID">UNPAID (Pending Payment)</option>
-                  <option value="PAID">PAID (Full Payment Cleared)</option>
-                  <option value="PARTIAL">PARTIAL (Advance / Deposit)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label text-xs font-bold text-slate-700">
-                  Payment Method
-                </label>
-                <select
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="form-input text-xs font-semibold mt-1 bg-white"
-                >
-                  <option value="CASH">Cash in Hand</option>
-                  <option value="ESEWA">eSewa</option>
-                  <option value="KHALTI">Khalti</option>
-                  <option value="FONEPAY">Fonepay QR</option>
-                  <option value="BANK_TRANSFER">Bank Transfer / ConnectIPS</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="form-label text-xs font-semibold text-slate-700">
-                Payment & Receipt Notes / Reference ID
-              </label>
-              <input
-                type="text"
-                value={paymentNotes}
-                onChange={(e) => setPaymentNotes(e.target.value)}
-                placeholder="e.g. Paid via eSewa Txn# 9825870047, parts cost included Rs. 400"
-                className="form-input text-xs mt-1"
-              />
-            </div>
-
-            {/* Quick Helper Actions */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
-              <div className="text-xs">
-                {balanceDue > 0 ? (
-                  <span className="text-red-600 font-bold">
-                    Remaining Unpaid Balance: Rs. {balanceDue.toLocaleString('en-IN')}
-                  </span>
-                ) : (
-                  <span className="text-emerald-700 font-bold flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5" /> No Pending Balance
-                  </span>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={handleMarkFullPaid}
-                className="text-xs px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 transition-colors"
-              >
-                Mark Full Payment Received
-              </button>
-            </div>
-          </div>
-
-          {/* Customer Booking History (Repeat Client Record) */}
-          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <History className="w-4 h-4 text-blue-600" />
-                <h3 className="text-sm font-bold text-slate-900">
-                  Customer Service History with VoltixNepal
-                </h3>
-              </div>
-              <CustomerLoyaltyBadge count={request.customerRequestCount} />
-            </div>
-
-            {customerHistory.length <= 1 ? (
-              <p className="text-xs text-slate-500">
-                This is the customer's 1st registered service booking with Voltix Nepal.
-              </p>
-            ) : (
-              <div className="space-y-2 text-xs">
-                <p className="text-xs font-semibold text-slate-700">
-                  This customer has completed / booked <strong>{customerHistory.length} service requests</strong>:
-                </p>
-                <div className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
-                  {customerHistory.map((hist) => (
-                    <div
-                      key={hist.id}
-                      className={`p-3 flex items-center justify-between gap-3 ${
-                        hist.id === request.id ? 'bg-red-50/40 font-semibold' : 'bg-white'
-                      }`}
-                    >
-                      <div>
-                        <div className="font-mono text-red-600 font-bold">
-                          {hist.requestId}
-                        </div>
-                        <div className="text-slate-800 text-xs">
-                          {hist.serviceName}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <PaymentBadge
-                          status={hist.paymentStatus}
-                          amount={hist.paidAmount || hist.billedAmount}
-                          method={hist.paymentMethod}
-                        />
-                        <StatusBadge status={hist.status} />
-                        {hist.id !== request.id && (
-                          <Link
-                            href={`/admin/requests/${hist.id}`}
-                            className="btn-secondary text-[11px] py-1 px-2.5"
-                          >
-                            View
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Real Location, Dispatch & Live GPS Ride Controls */}
-          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-5">
+          {/* 4. Real Location, Dispatch & Live GPS Ride Controls (order-4 on mobile) */}
+          <div className="order-4 lg:order-none bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -763,12 +804,209 @@ export default function AdminRequestDetailPage({
               </a>
             </div>
           </div>
+
+          {/* 5. Dedicated Financial Billing & Payment Card (order-5 on mobile - LAST!) */}
+          <div className="order-5 lg:order-none space-y-6">
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-lg bg-emerald-600 text-white shadow-xs">
+                    <Wallet className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">
+                      Customer Payment & Billing
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Track what the customer paid, amount charged, and payment method
+                    </p>
+                  </div>
+                </div>
+
+                <PaymentBadge
+                  status={paymentStatus}
+                  amount={Number(paidAmount) || Number(billedAmount)}
+                  method={paymentMethod}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label text-xs font-bold text-slate-700">
+                    Total Billed Amount (NPR / Rs.)
+                  </label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+                      Rs.
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="50"
+                      value={billedAmount}
+                      onChange={(e) => setBilledAmount(e.target.value)}
+                      placeholder="e.g. 1500"
+                      className="form-input pl-10 text-xs font-bold text-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label text-xs font-bold text-slate-700">
+                    Amount Paid / Received (NPR / Rs.)
+                  </label>
+                  <div className="relative mt-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">
+                      Rs.
+                    </span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="50"
+                      value={paidAmount}
+                      onChange={(e) => setPaidAmount(e.target.value)}
+                      placeholder="e.g. 1500"
+                      className="form-input pl-10 text-xs font-bold text-emerald-700"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label text-xs font-bold text-slate-700">
+                    Payment Status
+                  </label>
+                  <select
+                    value={paymentStatus}
+                    onChange={(e) => setPaymentStatus(e.target.value)}
+                    className="form-input text-xs font-bold mt-1 bg-white"
+                  >
+                    <option value="UNPAID">UNPAID (Pending Payment)</option>
+                    <option value="PAID">PAID (Full Payment Cleared)</option>
+                    <option value="PARTIAL">PARTIAL (Advance / Deposit)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label text-xs font-bold text-slate-700">
+                    Payment Method
+                  </label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="form-input text-xs font-semibold mt-1 bg-white"
+                  >
+                    <option value="CASH">Cash in Hand</option>
+                    <option value="ESEWA">eSewa</option>
+                    <option value="KHALTI">Khalti</option>
+                    <option value="FONEPAY">Fonepay QR</option>
+                    <option value="BANK_TRANSFER">Bank Transfer / ConnectIPS</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label text-xs font-semibold text-slate-700">
+                  Payment & Receipt Notes / Reference ID
+                </label>
+                <input
+                  type="text"
+                  value={paymentNotes}
+                  onChange={(e) => setPaymentNotes(e.target.value)}
+                  placeholder="e.g. Paid via eSewa Txn# 9825870047, parts cost included Rs. 400"
+                  className="form-input text-xs mt-1"
+                />
+              </div>
+
+              {/* Quick Helper Actions */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                <div className="text-xs">
+                  {balanceDue > 0 ? (
+                    <span className="text-red-600 font-bold">
+                      Remaining Unpaid Balance: Rs. {balanceDue.toLocaleString('en-IN')}
+                    </span>
+                  ) : (
+                    <span className="text-emerald-700 font-bold flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" /> No Pending Balance
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleMarkFullPaid}
+                  className="text-xs px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 transition-colors"
+                >
+                  Mark Full Payment Received
+                </button>
+              </div>
+            </div>
+
+            {/* Customer Booking History (Repeat Client Record) */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <History className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-bold text-slate-900">
+                    Customer Service History with VoltixNepal
+                  </h3>
+                </div>
+                <CustomerLoyaltyBadge count={request.customerRequestCount} />
+              </div>
+
+              {customerHistory.length <= 1 ? (
+                <p className="text-xs text-slate-500">
+                  This is the customer's 1st registered service booking with Voltix Nepal.
+                </p>
+              ) : (
+                <div className="space-y-2 text-xs">
+                  <p className="text-xs font-semibold text-slate-700">
+                    This customer has completed / booked <strong>{customerHistory.length} service requests</strong>:
+                  </p>
+                  <div className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
+                    {customerHistory.map((hist) => (
+                      <div
+                        key={hist.id}
+                        className={`p-3 flex items-center justify-between gap-3 ${
+                          hist.id === request.id ? 'bg-red-50/40 font-semibold' : 'bg-white'
+                        }`}
+                      >
+                        <div>
+                          <div className="font-mono text-red-600 font-bold">
+                            {hist.requestId}
+                          </div>
+                          <div className="text-slate-800 text-xs">
+                            {hist.serviceName}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <PaymentBadge
+                            status={hist.paymentStatus}
+                            amount={hist.paidAmount || hist.billedAmount}
+                            method={hist.paymentMethod}
+                          />
+                          <StatusBadge status={hist.status} />
+                          {hist.id !== request.id && (
+                            <Link
+                              href={`/admin/requests/${hist.id}`}
+                              className="btn-secondary text-[11px] py-1 px-2.5"
+                            >
+                              View
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Right (4 cols): Dispatch & Status Controls */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Customer Contact Card */}
-          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
+        <div className="contents lg:flex lg:flex-col lg:col-span-4 space-y-6 w-full">
+          {/* 2. Customer Contact Card (order-2 on mobile) */}
+          <div className="order-2 lg:order-none bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
               Customer Contact
             </h3>
@@ -824,8 +1062,8 @@ export default function AdminRequestDetailPage({
             </div>
           </div>
 
-          {/* Status & Assignment Box */}
-          <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
+          {/* 3. Status & Assignment Box (order-3 on mobile, directly below customer contact) */}
+          <div className="order-3 lg:order-none bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
             <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
               Update Request & Save
             </h3>
@@ -883,6 +1121,61 @@ export default function AdminRequestDetailPage({
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Mobile Sticky Floating Actions (Easy 1-tap call, whatsapp, accept/decline on phones) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 shadow-2xl">
+        <div className="flex items-center gap-2 max-w-lg mx-auto">
+          <a
+            href={`tel:${request.customerPhone}`}
+            className="p-3 rounded-xl bg-slate-100 text-slate-800 hover:bg-slate-200 flex items-center justify-center shrink-0 border border-slate-200 active:scale-95 transition-transform"
+            title="Call Customer"
+          >
+            <Phone className="w-5 h-5 text-red-600" />
+          </a>
+          <a
+            href={customerWhatsAppLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-3 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-transform"
+            title="WhatsApp Customer"
+          >
+            <MessageSquare className="w-5 h-5 fill-current" />
+          </a>
+
+          {status === 'NEW' || status === 'CONTACTED' ? (
+            <>
+              <button
+                type="button"
+                onClick={handleAcceptOrder}
+                disabled={deciding}
+                className="flex-1 bg-emerald-600 hover:bg-emerald-700 active:scale-98 text-white font-black text-xs py-3 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-md"
+              >
+                {deciding ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                <span>Accept</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDeclineModal(true)}
+                disabled={deciding}
+                className="bg-rose-50 border border-rose-300 text-rose-700 font-bold text-xs py-3 px-3 rounded-xl flex items-center justify-center gap-1 active:scale-98"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>Decline</span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 btn-primary py-3 text-xs font-black flex items-center justify-center gap-2 rounded-xl"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span>Save Changes</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

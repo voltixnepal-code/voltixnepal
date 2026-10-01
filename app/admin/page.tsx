@@ -20,6 +20,7 @@ import {
   Calendar,
   Wallet,
   Receipt,
+  ChevronRight,
 } from 'lucide-react';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
 import { CustomerLoyaltyBadge, PaymentBadge } from '@/components/admin/CustomerLoyaltyBadge';
@@ -263,16 +264,17 @@ export default function AdminDashboardOverview() {
           ) : (
             <div className="divide-y divide-slate-100">
               {recentRequests.map((req: any) => (
-                <div
+                <Link
                   key={req.id}
-                  className="p-5 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                  href={`/admin/requests/${req.id}`}
+                  className="p-5 hover:bg-slate-50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 block group cursor-pointer"
                 >
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono font-bold text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200">
+                      <span className="font-mono font-bold text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded border border-red-200 group-hover:border-red-300">
                         {req.requestId}
                       </span>
-                      <span className="font-bold text-sm text-slate-900">
+                      <span className="font-bold text-sm text-slate-900 group-hover:text-red-600 transition-colors">
                         {req.customerName}
                       </span>
                       {/* Repeat Work Multiplier Badge (e.g. x1, x2, x3...) */}
@@ -303,16 +305,11 @@ export default function AdminDashboardOverview() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 self-end sm:self-center">
+                  <div className="flex items-center gap-3 self-end sm:self-center">
                     <StatusBadge status={req.status} />
-                    <Link
-                      href={`/admin/requests/${req.id}`}
-                      className="btn-secondary text-xs py-1.5 px-3 font-semibold hover:bg-slate-100"
-                    >
-                      Manage & Bill
-                    </Link>
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-red-600 group-hover:translate-x-1 transition-all" />
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
