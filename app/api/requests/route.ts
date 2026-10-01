@@ -256,13 +256,16 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
     const customerEmail = searchParams.get('email');
+    const customerPhone = searchParams.get('phone');
     const status = searchParams.get('status');
     const urgency = searchParams.get('urgency');
     const query = searchParams.get('q');
 
-    // If fetching for a specific customer (by userId or email)
-    if (userId || customerEmail) {
+    // If fetching for a specific customer (by userId, email, or phone)
+    if (userId || customerEmail || customerPhone) {
       const orConditions: any[] = [];
+      const cleanEmail = customerEmail ? customerEmail.trim().toLowerCase() : null;
+      const cleanPhone = customerPhone ? customerPhone.replace(/\D/g, '').slice(-10) : null;
 
       if (userId) {
         const user = await prisma.user.findFirst({
@@ -271,15 +274,39 @@ export async function GET(req: NextRequest) {
         if (user) {
           orConditions.push({ userId: user.id });
           if (user.email) {
-            orConditions.push({ customerEmail: { equals: user.email, mode: 'insensitive' } });
+            orConditions.push({ customerEmail: { equals: user.email.trim().toLowerCase(), mode: 'insensitive' } });
+          }
+          if (user.phone) {
+            const uPhone = user.phone.replace(/\D/g, '').slice(-10);
+            if (uPhone.length >= 7) {
+              orConditions.push({ customerPhone: { contains: uPhone } });
+            }
+          }
+
+          // Automatically auto-link any past guest requests for this customer to ensure lifetime history
+          const emailToLink = user.email || cleanEmail;
+          if (emailToLink) {
+            await prisma.serviceRequest.updateMany({
+              where: {
+                userId: null,
+                customerEmail: { equals: emailToLink.trim().toLowerCase(), mode: 'insensitive' },
+              },
+              data: {
+                userId: user.id,
+              },
+            }).catch(() => {});
           }
         } else {
           orConditions.push({ userId });
         }
       }
 
-      if (customerEmail) {
-        orConditions.push({ customerEmail: { equals: customerEmail.trim().toLowerCase(), mode: 'insensitive' } });
+      if (cleanEmail) {
+        orConditions.push({ customerEmail: { equals: cleanEmail, mode: 'insensitive' } });
+      }
+
+      if (cleanPhone && cleanPhone.length >= 7) {
+        orConditions.push({ customerPhone: { contains: cleanPhone } });
       }
 
       const requests = await prisma.serviceRequest.findMany({
