@@ -17,42 +17,58 @@ service cloud.firestore {
       return isAuthenticated() && (
         request.auth.token.email.lower() == 'voltixnepal@gmail.com' ||
         request.auth.token.email.lower() == 'bishaldev949@gmail.com' ||
+        request.auth.token.email.lower() == 'info@voltixnepal.com' ||
         request.auth.token.admin == true ||
         request.auth.token.role == 'ADMIN'
       );
     }
 
-    // Returns true if user is accessing their own profile document
+    // Returns true if user is accessing their own document
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
     // ==========================================
-    // 1. SERVICE REQUESTS & BOOKINGS
+    // 1. SERVICE REQUESTS, ORDERS & BOOKINGS
     // ==========================================
     match /serviceRequests/{requestId} {
-      // Public / Customers can submit booking requests
+      // Anyone can submit a booking request
       allow create: if true;
 
-      // Customers can read only their own requests; Admins can read all
-      allow read: if isAdmin() || (
-        isAuthenticated() && (
-          resource.data.userId == request.auth.uid ||
-          resource.data.customerEmail == request.auth.token.email
-        )
-      );
+      // Admins can read all; Customers can read their own bookings; Public can read for tracking
+      allow read: if true;
 
       // Only Admins can update status, assign technicians, or delete
       allow update, delete: if isAdmin();
     }
 
+    match /requests/{requestId} {
+      allow create: if true;
+      allow read: if true;
+      allow update, delete: if isAdmin();
+    }
+
     // ==========================================
-    // 2. USER PROFILES & CUSTOMERS
+    // 2. USER PROFILES, MY ACCOUNT & CUSTOMER HISTORY
     // ==========================================
     match /users/{userId} {
+      // User can view & manage their own profile; Admin has full access
       allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow create, update: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow delete: if isAdmin();
+
+      // Permanent lifetime user request and order subcollections
+      match /requests/{subRequestId} {
+        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      }
+
+      match /orders/{subOrderId} {
+        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      }
+
+      match /history/{historyId} {
+        allow read, write: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      }
     }
 
     match /customers/{customerId} {
@@ -60,12 +76,62 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 3. DAILY WORK GALLERY (Photos & Videos)
+    // 3. INVOICES, BILLING & PAYMENT RECEIPTS
+    // ==========================================
+    match /invoices/{invoiceId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.customerEmail.lower() == request.auth.token.email.lower()
+        )
+      );
+      allow write: if isAdmin();
+    }
+
+    match /billing/{billId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.customerEmail.lower() == request.auth.token.email.lower()
+        )
+      );
+      allow write: if isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.customerEmail.lower() == request.auth.token.email.lower()
+        )
+      );
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // 4. TECHNICIANS & LIVE GPS RIDE TRACKING
+    // ==========================================
+    match /technicians/{techId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /rides/{rideId} {
+      // Public / Customer can track active live ride by ID
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /liveLocations/{locationId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // 5. DAILY WORK GALLERY (Photos & Videos)
     // ==========================================
     match /galleryItems/{itemId} {
-      // Public can view published work items; Admins can view all items
       allow read: if isAdmin() || resource.data.isPublished == true || !('isPublished' in resource.data);
-      // Only authenticated admins can add, edit, or delete work records
       allow write: if isAdmin();
     }
 
@@ -75,7 +141,7 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 4. SERVICES CATALOG
+    // 6. SERVICES CATALOG
     // ==========================================
     match /services/{serviceId} {
       allow read: if true;
@@ -83,7 +149,7 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 5. HERO SLIDES & HOMEPAGE SECTIONS
+    // 7. HERO SLIDES & HOMEPAGE SECTIONS
     // ==========================================
     match /heroSlides/{slideId} {
       allow read: if true;
@@ -96,7 +162,7 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 6. BLOG POSTS, VIEWS & NEWSLETTER
+    // 8. BLOG POSTS, VIEWS & NEWSLETTER
     // ==========================================
     match /blogPosts/{postId} {
       allow read: if true;
@@ -114,9 +180,8 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
-
     // ==========================================
-    // 7. FAQS & TESTIMONIALS
+    // 9. FAQS & TESTIMONIALS
     // ==========================================
     match /faqs/{faqId} {
       allow read: if true;
@@ -130,7 +195,7 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 8. CONTACT MESSAGES & INQUIRIES
+    // 10. CONTACT MESSAGES & INQUIRIES
     // ==========================================
     match /contactMessages/{messageId} {
       allow create: if true; // Public can send inquiries
@@ -138,7 +203,7 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 9. WEBSITE SETTINGS
+    // 11. WEBSITE SETTINGS
     // ==========================================
     match /websiteSettings/{settingId} {
       allow read: if true;
@@ -146,7 +211,7 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 10. PRIVATE ADMIN LOGS & NOTIFICATIONS
+    // 12. PRIVATE ADMIN LOGS & NOTIFICATIONS
     // ==========================================
     match /auditLogs/{logId} {
       allow read, write: if isAdmin();
@@ -157,7 +222,7 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // 11. DEFAULT CATCH-ALL
+    // 13. DEFAULT CATCH-ALL
     // ==========================================
     match /{document=**} {
       allow read, write: if isAdmin();
