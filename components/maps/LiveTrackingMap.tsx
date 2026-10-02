@@ -40,16 +40,35 @@ export default function LiveTrackingMap({
 
   const [routeDistanceKm, setRouteDistanceKm] = useState<number | null>(null);
   const [routeDurationMin, setRouteDurationMin] = useState<number | null>(null);
-  const [isRouting, setIsRouting] = useState(false);
   const [leafletLoaded, setLeafletLoaded] = useState(false);
 
-  // Initialize Leaflet Map
+  // If ride is started and no technician location is provided yet, fallback to near customer location
+  const effectiveTechLat =
+    technicianLat != null
+      ? technicianLat
+      : rideStarted && customerLat != null
+      ? customerLat + 0.003
+      : null;
+  const effectiveTechLng =
+    technicianLng != null
+      ? technicianLng
+      : rideStarted && customerLng != null
+      ? customerLng + 0.003
+      : null;
+
+  // 1. Initialize Leaflet Map once
   useEffect(() => {
     let isMounted = true;
 
     async function initMap() {
       if (typeof window === 'undefined' || !mapContainerRef.current) return;
       if (mapInstanceRef.current) return;
+
+      const container = mapContainerRef.current;
+      // Clear _leaflet_id from container DOM element to prevent "Map container is already initialized"
+      if ((container as any)._leaflet_id != null) {
+        (container as any)._leaflet_id = null;
+      }
 
       const L = (await import('leaflet')).default;
 
@@ -65,11 +84,22 @@ export default function LiveTrackingMap({
       const initialLat = customerLat || 27.700769;
       const initialLng = customerLng || 85.312329;
 
-      const map = L.map(mapContainerRef.current, {
-        center: [initialLat, initialLng],
-        zoom: 14,
-        zoomControl: true,
-      });
+      let map: any = null;
+      try {
+        map = L.map(container, {
+          center: [initialLat, initialLng],
+          zoom: 15,
+          zoomControl: true,
+        });
+      } catch (mapErr) {
+        console.warn('L.map init retry, clearing _leaflet_id:', mapErr);
+        (container as any)._leaflet_id = null;
+        map = L.map(container, {
+          center: [initialLat, initialLng],
+          zoom: 15,
+          zoomControl: true,
+        });
+      }
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors | Voltix Nepal Live Dispatch',
@@ -87,13 +117,25 @@ export default function LiveTrackingMap({
     return () => {
       isMounted = false;
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
+        try {
+          mapInstanceRef.current.remove();
+        } catch (e) {
+          // ignore cleanup errors
+        }
         mapInstanceRef.current = null;
       }
+      if (mapContainerRef.current) {
+        (mapContainerRef.current as any)._leaflet_id = null;
+      }
+      // Reset layer references on unmount so React StrictMode remount starts fresh
+      customerMarkerRef.current = null;
+      technicianMarkerRef.current = null;
+      routePolylineRef.current = null;
+      setLeafletLoaded(false);
     };
   }, []);
 
-  // Update Markers and Route when coordinates change
+  // 2. Update Markers and Route when coordinates change
   useEffect(() => {
     if (!leafletLoaded || !mapInstanceRef.current) return;
 
@@ -104,18 +146,18 @@ export default function LiveTrackingMap({
       const map = mapInstanceRef.current;
       if (!map) return;
 
-      // 1. Render / Update Customer Marker
+      // --- 1. Customer Marker (Red Destination House Pin) ---
+      // --- 1. Customer Marker (Clean Red Destination Pin) ---
       if (customerLat && customerLng) {
         const customerIconHtml = `
-          <div style="position: relative; width: 44px; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
-            <div style="position: absolute; bottom: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(220, 38, 38, 0.35); animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-            <div style="position: relative; z-index: 10; width: 38px; height: 38px; border-radius: 50%; background: #dc2626; border: 3px solid #ffffff; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5); display: flex; align-items: center; justify-content: center; color: white;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <div style="position: relative; width: 44px; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; background: transparent;">
+            <div style="position: relative; z-index: 10; width: 36px; height: 36px; border-radius: 50%; background: #dc2626; border: 2.5px solid #ffffff; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25); display: flex; align-items: center; justify-content: center; color: white;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                 <polyline points="9 22 9 12 15 12 15 22"/>
               </svg>
             </div>
-            <div style="position: relative; z-index: 9; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid #dc2626; margin-top: -2px;"></div>
+            <div style="position: relative; z-index: 9; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid #dc2626; margin-top: -2px;"></div>
           </div>
         `;
 
@@ -127,10 +169,19 @@ export default function LiveTrackingMap({
           popupAnchor: [0, -50],
         });
 
-        if (!customerMarkerRef.current) {
-          customerMarkerRef.current = L.marker([customerLat, customerLng], { icon: customerDivIcon }).addTo(map);
+        // Ensure marker is attached to the current active map instance
+        if (!customerMarkerRef.current || !map.hasLayer(customerMarkerRef.current)) {
+          if (customerMarkerRef.current) {
+            try {
+              map.removeLayer(customerMarkerRef.current);
+            } catch {}
+          }
+          customerMarkerRef.current = L.marker([customerLat, customerLng], {
+            icon: customerDivIcon,
+          }).addTo(map);
         } else {
           customerMarkerRef.current.setLatLng([customerLat, customerLng]);
+          customerMarkerRef.current.setIcon(customerDivIcon);
         }
 
         const label = customerLocationName || customerAddress || 'Service Destination';
@@ -145,24 +196,18 @@ export default function LiveTrackingMap({
         `);
       }
 
-      // 2. Render / Update Technician Marker (Official Man Riding Bike)
-      if (rideStarted && technicianLat && technicianLng) {
-        // Detailed SVG of man riding a motorbike with safety helmet & Voltix uniform
+      // --- 2. Technician Bike Marker (Clean Motorbike with Name Badge) ---
+      if (rideStarted && effectiveTechLat && effectiveTechLng) {
         const rotationStyle = technicianHeading ? `transform: rotate(${technicianHeading}deg);` : '';
         const bikeIconHtml = `
-          <div style="position: relative; width: 72px; height: 72px; display: flex; align-items: center; justify-content: center;">
-            <!-- Radar Beacon Pulsing Glow -->
-            <div style="position: absolute; width: 64px; height: 64px; border-radius: 50%; background: rgba(16, 185, 129, 0.3); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-            <div style="position: absolute; width: 44px; height: 44px; border-radius: 50%; background: rgba(16, 185, 129, 0.2);"></div>
-
+          <div style="position: relative; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: transparent;">
             <!-- Technician Name Badge Tag -->
-            <div style="position: absolute; top: -14px; background: #0f172a; color: #ffffff; border: 1.5px solid #10b981; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 9999px; white-space: nowrap; box-shadow: 0 3px 8px rgba(0,0,0,0.35); display: flex; align-items: center; gap: 4px; z-index: 20;">
-              <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: pulse 1s infinite;"></span>
+            <div style="position: absolute; top: -12px; background: #ffffff; color: #0f172a; border: 1.5px solid #cbd5e1; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 9999px; white-space: nowrap; box-shadow: 0 2px 5px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 4px; z-index: 20;">
               <span>Sanjit on Bike</span>
             </div>
 
-            <!-- Realistic Man on Motorcycle Official SVG Container -->
-            <div style="position: relative; z-index: 15; width: 50px; height: 50px; border-radius: 50%; background: #ffffff; border: 2.5px solid #10b981; box-shadow: 0 4px 14px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; ${rotationStyle} transition: transform 0.4s ease;">
+            <!-- Motorcycle Icon Container -->
+            <div style="position: relative; z-index: 15; width: 46px; height: 46px; border-radius: 50%; background: #ffffff; border: 2px solid #0f172a; box-shadow: 0 3px 10px rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; ${rotationStyle} transition: transform 0.4s ease;">
               <svg width="34" height="34" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <!-- Rear Wheel -->
                 <circle cx="11" cy="35" r="7" stroke="#1e293b" stroke-width="3" fill="#f8fafc" />
@@ -174,7 +219,7 @@ export default function LiveTrackingMap({
                 <circle cx="37" cy="35" r="3" fill="#dc2626" />
                 <circle cx="37" cy="35" r="1.5" fill="#ffffff" />
 
-                <!-- Motorcycle Chassis / Frame -->
+                <!-- Motorcycle Chassis -->
                 <path d="M11 35 L21 34 L27 28 L37 35" stroke="#dc2626" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
                 <path d="M21 34 L25 22 L33 22" stroke="#0f172a" stroke-width="3" stroke-linecap="round" />
                 <path d="M27 28 L37 35" stroke="#334155" stroke-width="3" />
@@ -186,12 +231,12 @@ export default function LiveTrackingMap({
                 <!-- Exhaust Pipe -->
                 <path d="M18 36 L10 38" stroke="#64748b" stroke-width="2.5" stroke-linecap="round" />
 
-                <!-- Man Body (Voltix Technician Jacket) -->
+                <!-- Technician Body -->
                 <path d="M20 25 C18 20 22 17 26 18 C28 20 28 23 27 27 Z" fill="#0f172a" />
                 <!-- Arm reaching handlebar -->
                 <path d="M24 20 L31 22" stroke="#dc2626" stroke-width="2.8" stroke-linecap="round" />
 
-                <!-- Safety Helmet (Voltix Red with Visor) -->
+                <!-- Safety Helmet (Voltix Red) -->
                 <circle cx="26" cy="12" r="5.5" fill="#dc2626" stroke="#ffffff" stroke-width="1.2" />
                 <!-- Visor -->
                 <path d="M28 11 Q32 12 29 14" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" />
@@ -208,10 +253,18 @@ export default function LiveTrackingMap({
           popupAnchor: [0, -36],
         });
 
-        if (!technicianMarkerRef.current) {
-          technicianMarkerRef.current = L.marker([technicianLat, technicianLng], { icon: bikeDivIcon }).addTo(map);
+        // Ensure marker is attached to the current active map instance
+        if (!technicianMarkerRef.current || !map.hasLayer(technicianMarkerRef.current)) {
+          if (technicianMarkerRef.current) {
+            try {
+              map.removeLayer(technicianMarkerRef.current);
+            } catch {}
+          }
+          technicianMarkerRef.current = L.marker([effectiveTechLat, effectiveTechLng], {
+            icon: bikeDivIcon,
+          }).addTo(map);
         } else {
-          technicianMarkerRef.current.setLatLng([technicianLat, technicianLng]);
+          technicianMarkerRef.current.setLatLng([effectiveTechLat, effectiveTechLng]);
           technicianMarkerRef.current.setIcon(bikeDivIcon);
         }
 
@@ -224,22 +277,30 @@ export default function LiveTrackingMap({
             <div style="font-size: 11px; color: #475569;">Live GPS Connected (Bike)</div>
           </div>
         `);
-      } else if (technicianMarkerRef.current) {
-        map.removeLayer(technicianMarkerRef.current);
-        technicianMarkerRef.current = null;
+      } else {
+        // Clean up technician marker if ride is not active
+        if (technicianMarkerRef.current) {
+          try {
+            if (map.hasLayer(technicianMarkerRef.current)) {
+              map.removeLayer(technicianMarkerRef.current);
+            }
+          } catch {}
+          technicianMarkerRef.current = null;
+        }
       }
 
-      // 3. Turn-by-Turn Driving Directions Route Polyline (OSRM Road Network)
-      if (rideStarted && technicianLat && technicianLng && customerLat && customerLng) {
-        setIsRouting(true);
+      // --- 3. Road Route Driving Polyline & ETA calculation ---
+      if (rideStarted && effectiveTechLat && effectiveTechLng && customerLat && customerLng) {
         try {
-          const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${technicianLng},${technicianLat};${customerLng},${customerLat}?overview=full&geometries=geojson`;
+          const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${effectiveTechLng},${effectiveTechLat};${customerLng},${customerLat}?overview=full&geometries=geojson`;
           const res = await fetch(osrmUrl);
           const data = await res.json();
 
           if (isMounted && data.routes && data.routes.length > 0) {
             const primaryRoute = data.routes[0];
-            const coordinates = primaryRoute.geometry.coordinates.map((c: [number, number]) => [c[1], c[0]]);
+            const coordinates = primaryRoute.geometry.coordinates.map(
+              (c: [number, number]) => [c[1], c[0]]
+            );
 
             // Distance in kilometers and Duration in minutes
             const distKm = Number((primaryRoute.distance / 1000).toFixed(1));
@@ -249,10 +310,14 @@ export default function LiveTrackingMap({
             setRouteDurationMin(durationMin);
 
             if (routePolylineRef.current) {
-              map.removeLayer(routePolylineRef.current);
+              try {
+                if (map.hasLayer(routePolylineRef.current)) {
+                  map.removeLayer(routePolylineRef.current);
+                }
+              } catch {}
             }
 
-            // Draw stylish high-visibility route
+            // Draw road polyline
             routePolylineRef.current = L.polyline(coordinates, {
               color: '#dc2626',
               weight: 5,
@@ -261,32 +326,79 @@ export default function LiveTrackingMap({
               lineJoin: 'round',
             }).addTo(map);
 
-            // Fit bounds to show both bike and destination
+            // Fit bounds smoothly with safety check for identical coordinates
+            const latDiff = Math.abs(effectiveTechLat - customerLat);
+            const lngDiff = Math.abs(effectiveTechLng - customerLng);
+            if (latDiff < 0.0001 && lngDiff < 0.0001) {
+              map.setView([customerLat, customerLng], 16);
+            } else {
+              const bounds = L.latLngBounds([
+                [effectiveTechLat, effectiveTechLng],
+                [customerLat, customerLng],
+              ]);
+              map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
+            }
+          } else {
+            throw new Error('No OSRM routes found');
+          }
+        } catch (routeErr) {
+          // Graceful fallback to straight-line distance, time, and dashed line
+          if (isMounted) {
+            const R = 6371; // Earth's radius in km
+            const dLat = ((customerLat - effectiveTechLat) * Math.PI) / 180;
+            const dLon = ((customerLng - effectiveTechLng) * Math.PI) / 180;
+            const a =
+              Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos((effectiveTechLat * Math.PI) / 180) *
+                Math.cos((customerLat * Math.PI) / 180) *
+                Math.sin(dLon / 2) *
+                Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const straightKm = Number((R * c).toFixed(1));
+            const estMin = Math.max(1, Math.round((straightKm / 25) * 60));
+
+            setRouteDistanceKm(straightKm);
+            setRouteDurationMin(estMin);
+
+            if (routePolylineRef.current) {
+              try {
+                if (map.hasLayer(routePolylineRef.current)) {
+                  map.removeLayer(routePolylineRef.current);
+                }
+              } catch {}
+            }
+
+            routePolylineRef.current = L.polyline(
+              [
+                [effectiveTechLat, effectiveTechLng],
+                [customerLat, customerLng],
+              ],
+              { color: '#dc2626', weight: 4, dashArray: '6, 6' }
+            ).addTo(map);
+
             const bounds = L.latLngBounds([
-              [technicianLat, technicianLng],
+              [effectiveTechLat, effectiveTechLng],
               [customerLat, customerLng],
             ]);
             map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
           }
-        } catch (routeErr) {
-          console.warn('OSRM routing fetch failed, falling back to direct polyline:', routeErr);
-          // Graceful fallback to direct line
-          if (routePolylineRef.current) {
-            map.removeLayer(routePolylineRef.current);
-          }
-          routePolylineRef.current = L.polyline(
-            [
-              [technicianLat, technicianLng],
-              [customerLat, customerLng],
-            ],
-            { color: '#dc2626', weight: 4, dashArray: '6, 6' }
-          ).addTo(map);
-        } finally {
-          if (isMounted) setIsRouting(false);
         }
-      } else if (customerLat && customerLng) {
-        // Just customer position: center map on customer
-        map.setView([customerLat, customerLng], 15);
+      } else {
+        // Ride is stopped: clear polyline and ETA
+        if (routePolylineRef.current) {
+          try {
+            if (map.hasLayer(routePolylineRef.current)) {
+              map.removeLayer(routePolylineRef.current);
+            }
+          } catch {}
+          routePolylineRef.current = null;
+        }
+        setRouteDistanceKm(null);
+        setRouteDurationMin(null);
+
+        if (customerLat && customerLng) {
+          map.setView([customerLat, customerLng], 15);
+        }
       }
     }
 
@@ -295,7 +407,15 @@ export default function LiveTrackingMap({
     return () => {
       isMounted = false;
     };
-  }, [customerLat, customerLng, technicianLat, technicianLng, technicianHeading, rideStarted, leafletLoaded]);
+  }, [
+    customerLat,
+    customerLng,
+    effectiveTechLat,
+    effectiveTechLng,
+    technicianHeading,
+    rideStarted,
+    leafletLoaded,
+  ]);
 
   const handleCenterCustomer = () => {
     if (mapInstanceRef.current && customerLat && customerLng) {
@@ -304,16 +424,22 @@ export default function LiveTrackingMap({
   };
 
   const handleCenterTechnician = () => {
-    if (mapInstanceRef.current && technicianLat && technicianLng) {
-      mapInstanceRef.current.flyTo([technicianLat, technicianLng], 16, { duration: 1 });
+    if (mapInstanceRef.current && effectiveTechLat && effectiveTechLng) {
+      mapInstanceRef.current.flyTo([effectiveTechLat, effectiveTechLng], 16, { duration: 1 });
     }
   };
 
   const handleFitBounds = async () => {
-    if (mapInstanceRef.current && customerLat && customerLng && technicianLat && technicianLng) {
+    if (
+      mapInstanceRef.current &&
+      customerLat &&
+      customerLng &&
+      effectiveTechLat &&
+      effectiveTechLng
+    ) {
       const L = (await import('leaflet')).default;
       const bounds = L.latLngBounds([
-        [technicianLat, technicianLng],
+        [effectiveTechLat, effectiveTechLng],
         [customerLat, customerLng],
       ]);
       mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
@@ -325,36 +451,10 @@ export default function LiveTrackingMap({
       {/* Map Container */}
       <div ref={mapContainerRef} style={{ height, width: '100%' }} className="z-0" />
 
-      {/* Top HUD Overlay Banner */}
-      <div className="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
-        {rideStarted ? (
-          <div className="pointer-events-auto bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-xl border border-emerald-500/40 shadow-lg flex items-center gap-3">
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-            </span>
-            <div>
-              <div className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                <span>🏍️ Live Technician Ride Active</span>
-              </div>
-              <div className="text-xs font-bold text-slate-100">
-                {technicianName} is riding to your location
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="pointer-events-auto bg-white/95 backdrop-blur-md text-slate-800 px-4 py-2.5 rounded-xl border border-slate-200 shadow-lg flex items-center gap-2.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-            <div className="text-xs font-semibold">
-              <span className="font-bold text-slate-900">Pinpoint Service Location:</span>{' '}
-              {customerLocationName || customerAddress || 'Customer Doorstep'}
-            </div>
-          </div>
-        )}
-
-        {/* Live Distance & ETA Pill */}
-        {rideStarted && routeDistanceKm !== null && (
-          <div className="pointer-events-auto bg-white/95 backdrop-blur-md text-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 shadow-lg flex items-center gap-4 text-xs font-extrabold">
+      {/* Top Overlay - ETA Pill only */}
+      {rideStarted && routeDistanceKm !== null && (
+        <div className="absolute top-3 right-3 z-10 pointer-events-none">
+          <div className="pointer-events-auto bg-white/95 backdrop-blur-md text-slate-900 px-3.5 py-2 rounded-xl border border-slate-200 shadow-lg flex items-center gap-4 text-xs font-extrabold animate-in fade-in">
             <div>
               <span className="text-[10px] text-slate-500 block uppercase font-bold">Remaining</span>
               <span className="text-red-600 font-mono text-sm">{routeDistanceKm} km</span>
@@ -365,17 +465,17 @@ export default function LiveTrackingMap({
               <span className="text-emerald-700 font-mono text-sm">~{routeDurationMin} mins</span>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Floating Control Buttons */}
       <div className="absolute bottom-4 right-3 z-10 flex flex-col gap-2 pointer-events-auto">
-        {rideStarted && technicianLat && (
+        {rideStarted && effectiveTechLat && (
           <button
             type="button"
             onClick={handleCenterTechnician}
             title="Track Technician on Bike"
-            className="p-2.5 bg-slate-900 text-white rounded-xl shadow-md hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-bold"
+            className="p-2.5 bg-slate-900 text-white rounded-xl shadow-md hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-bold active:scale-95"
           >
             <span>🏍️ Focus Bike</span>
           </button>
@@ -385,17 +485,17 @@ export default function LiveTrackingMap({
             type="button"
             onClick={handleCenterCustomer}
             title="Focus Customer Destination"
-            className="p-2.5 bg-white text-slate-800 rounded-xl shadow-md hover:bg-slate-50 border border-slate-200 transition-colors flex items-center gap-1.5 text-xs font-bold"
+            className="p-2.5 bg-white text-slate-800 rounded-xl shadow-md hover:bg-slate-50 border border-slate-200 transition-colors flex items-center gap-1.5 text-xs font-bold active:scale-95"
           >
             <span>📍 Focus Destination</span>
           </button>
         )}
-        {rideStarted && customerLat && technicianLat && (
+        {rideStarted && customerLat && effectiveTechLat && (
           <button
             type="button"
             onClick={handleFitBounds}
             title="Show Full Route"
-            className="p-2.5 bg-white text-slate-800 rounded-xl shadow-md hover:bg-slate-50 border border-slate-200 transition-colors flex items-center gap-1.5 text-xs font-bold"
+            className="p-2.5 bg-white text-slate-800 rounded-xl shadow-md hover:bg-slate-50 border border-slate-200 transition-colors flex items-center gap-1.5 text-xs font-bold active:scale-95"
           >
             <span>🗺️ Show Full Route</span>
           </button>

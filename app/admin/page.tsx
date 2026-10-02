@@ -21,6 +21,9 @@ import {
   Wallet,
   Receipt,
   ChevronRight,
+  Mail,
+  Send,
+  BellRing,
 } from 'lucide-react';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
 import { CustomerLoyaltyBadge, PaymentBadge } from '@/components/admin/CustomerLoyaltyBadge';
@@ -28,6 +31,8 @@ import { CustomerLoyaltyBadge, PaymentBadge } from '@/components/admin/CustomerL
 export default function AdminDashboardOverview() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [triggeringReminders, setTriggeringReminders] = useState(false);
+  const [reminderMsg, setReminderMsg] = useState<string | null>(null);
 
   const fetchOverview = async () => {
     setLoading(true);
@@ -41,6 +46,25 @@ export default function AdminDashboardOverview() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTriggerReminders = async () => {
+    setTriggeringReminders(true);
+    setReminderMsg(null);
+    try {
+      const res = await fetch('/api/cron/payment-reminders', { method: 'POST' });
+      const json = await res.json();
+      if (json.success) {
+        setReminderMsg(`✓ ${json.message}`);
+        fetchOverview();
+      } else {
+        setReminderMsg(`Error: ${json.message}`);
+      }
+    } catch (err: any) {
+      setReminderMsg(`Error: ${err.message}`);
+    } finally {
+      setTriggeringReminders(false);
     }
   };
 
@@ -159,11 +183,61 @@ export default function AdminDashboardOverview() {
             <div className="text-2xl font-extrabold text-white mt-2">
               {formatNpr(earnings.totalEarnings)}
             </div>
-            <div className="text-[11px] text-amber-300 font-medium mt-1">
-              Pending Receivable: {formatNpr(earnings.pendingReceivable)}
+            <div className="mt-1.5">
+              <Link
+                href="/admin/requests?status=PENDING_PAYMENT"
+                className="inline-flex items-center gap-1.5 text-[11px] text-amber-300 hover:text-amber-200 font-semibold bg-amber-400/10 hover:bg-amber-400/20 px-2 py-0.5 rounded border border-amber-400/30 transition-colors"
+              >
+                <span>Pending Receivable: {formatNpr(earnings.pendingReceivable)}</span>
+                {earnings.pendingCount > 0 && (
+                  <span className="bg-amber-400 text-slate-950 font-bold px-1 rounded text-[10px]">
+                    {earnings.pendingCount} due
+                  </span>
+                )}
+              </Link>
             </div>
           </div>
         </div>
+
+        {/* Pending Collections & 2-Day Auto Reminders Banner */}
+        {earnings.pendingReceivable > 0 && (
+          <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <BellRing className="w-4 h-4 text-amber-600 shrink-0" />
+                <span className="font-bold text-amber-900 text-sm">
+                  {formatNpr(earnings.pendingReceivable)} Pending Collection ({earnings.pendingCount || 0} unpaid orders)
+                </span>
+              </div>
+              <p className="text-amber-800 text-[11px] mt-0.5">
+                Customers receive automated PDF tax invoices & payment reminders every 2 days until dues are cleared.
+              </p>
+              {reminderMsg && (
+                <div className="font-medium text-[11px] text-emerald-800 mt-1">
+                  {reminderMsg}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+              <Link
+                href="/admin/requests?status=PENDING_PAYMENT"
+                className="flex-1 sm:flex-initial text-center px-3 py-1.5 rounded-lg bg-white border border-amber-300 text-amber-900 font-bold hover:bg-amber-100 transition-colors"
+              >
+                View Pending Orders
+              </Link>
+              <button
+                type="button"
+                onClick={handleTriggerReminders}
+                disabled={triggeringReminders}
+                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold transition-colors disabled:opacity-50"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{triggeringReminders ? 'Scanning & Sending...' : 'Run 2-Day Reminders'}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Operational KPI Cards */}

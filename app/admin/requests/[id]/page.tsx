@@ -32,6 +32,10 @@ import {
   Compass,
   Globe,
   Share2,
+  ChevronDown,
+  ChevronUp,
+  FileDown,
+  BellRing,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { StatusBadge, UrgencyBadge } from '@/components/admin/StatusBadge';
@@ -54,6 +58,7 @@ export default function AdminRequestDetailPage({
 }) {
   const [request, setRequest] = useState<any>(null);
   const [customerHistory, setCustomerHistory] = useState<any[]>([]);
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const [status, setStatus] = useState('NEW');
   const [internalNotes, setInternalNotes] = useState('');
   const [adminAssigned, setAdminAssigned] = useState('Sanjit Mishra');
@@ -73,6 +78,9 @@ export default function AdminRequestDetailPage({
   const [paymentStatus, setPaymentStatus] = useState('UNPAID');
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [paymentDueDate, setPaymentDueDate] = useState<string>('');
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderSuccessMsg, setReminderSuccessMsg] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -104,6 +112,7 @@ export default function AdminRequestDetailPage({
         setPaymentStatus(req.paymentStatus || 'UNPAID');
         setPaymentMethod(req.paymentMethod || 'CASH');
         setPaymentNotes(req.paymentNotes || '');
+        setPaymentDueDate(req.paymentDueDate ? new Date(req.paymentDueDate).toISOString().split('T')[0] : '');
       }
     } catch (err) {
       console.error(err);
@@ -164,6 +173,7 @@ export default function AdminRequestDetailPage({
       watchIdRef.current = null;
     }
     setIsBroadcasting(false);
+    setRideStarted(false);
     setBroadcastStatus('Ride stopped. Real GPS broadcasting paused.');
 
     try {
@@ -173,7 +183,6 @@ export default function AdminRequestDetailPage({
           rideStarted: false,
         }),
       });
-      setRideStarted(false);
     } catch (err) {
       console.error(err);
     }
@@ -181,9 +190,20 @@ export default function AdminRequestDetailPage({
 
   const handleToggleRide = async () => {
     if (!rideStarted) {
+      const initialLat =
+        technicianLat ||
+        request?.technicianLat ||
+        (request?.latitude ? request.latitude + 0.003 : 27.700769);
+      const initialLng =
+        technicianLng ||
+        request?.technicianLng ||
+        (request?.longitude ? request.longitude + 0.003 : 85.312329);
+
       setRideStarted(true);
+      setTechnicianLat(initialLat);
+      setTechnicianLng(initialLng);
       setStatus('IN_PROGRESS');
-      setBroadcastStatus('Ride started! Sending email notification to customer...');
+      setBroadcastStatus('Ride started! Live map connected. Acquiring device GPS...');
 
       // Immediately alert server so customer receives ride-started email without delay
       try {
@@ -191,9 +211,11 @@ export default function AdminRequestDetailPage({
           method: 'POST',
           body: JSON.stringify({
             rideStarted: true,
+            technicianLat: initialLat,
+            technicianLng: initialLng,
           }),
         });
-        setBroadcastStatus('Ride active! Customer notified by email. Acquiring live GPS...');
+        setBroadcastStatus('Ride active! Customer notified by email. Live GPS streaming...');
       } catch (err) {
         console.error('Failed to notify backend of ride start:', err);
       }
@@ -216,6 +238,28 @@ export default function AdminRequestDetailPage({
     fetchRequest();
   }, [params.id]);
 
+  // Periodic polling for live location updates from technician
+  useEffect(() => {
+    if (!params.id || isBroadcasting) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await adminFetch(`/api/requests/${params.id}/live-location`);
+        if (res.ok && res.data?.success && res.data?.data) {
+          const live = res.data.data;
+          setRideStarted(Boolean(live.rideStarted));
+          if (live.technicianLat != null) setTechnicianLat(live.technicianLat);
+          if (live.technicianLng != null) setTechnicianLng(live.technicianLng);
+          if (live.technicianHeading != null) setTechnicianHeading(live.technicianHeading);
+        }
+      } catch (e) {
+        // silent
+      }
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [params.id, isBroadcasting]);
+
   const handleSave = async () => {
     setSaving(true);
     setStatusMsg(null);
@@ -231,6 +275,7 @@ export default function AdminRequestDetailPage({
           paymentStatus,
           paymentMethod,
           paymentNotes,
+          paymentDueDate: paymentDueDate || null,
         }),
       });
 
@@ -368,6 +413,34 @@ export default function AdminRequestDetailPage({
   )}`;
 
   const balanceDue = Math.max(0, Number(billedAmount || 0) - Number(paidAmount || 0));
+
+  const paymentReminderWhatsAppLink = `https://wa.me/${customerWhatsAppNumber}?text=${encodeURIComponent(
+    `Hello ${request.customerName}, this is Sanjit Mishra from VoltixNepal.\n\nThis is a friendly payment reminder regarding your Invoice #${request.requestId}.\n• Total Billed: Rs. ${Number(billedAmount || 0).toLocaleString('en-IN')}\n• Paid: Rs. ${Number(paidAmount || 0).toLocaleString('en-IN')}\n• Remaining Due: Rs. ${balanceDue.toLocaleString('en-IN')}${paymentDueDate ? `\n• Due Date: ${paymentDueDate}` : ''}\n\nFast Payment Methods:\n• eSewa / Khalti ID: 9825870047 (Sanjit Mishra)\n• FonePay: 9825870047\n\nPlease share your payment screenshot once transferred. Thank you!`
+  )}`;
+
+  const handleSendPaymentReminder = async () => {
+    if (!request?.customerEmail) {
+      alert('This customer does not have an email address on file. Please send the reminder via WhatsApp.');
+      return;
+    }
+    setSendingReminder(true);
+    setReminderSuccessMsg(null);
+    try {
+      const res = await adminFetch(`/api/requests/${params.id}/send-payment-reminder`, {
+        method: 'POST',
+      });
+      if (res.ok && res.data?.success) {
+        setReminderSuccessMsg(res.data.message || 'Payment reminder & PDF invoice sent successfully!');
+        fetchRequest();
+      } else {
+        alert(res.data?.message || 'Failed to send payment reminder.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to send payment reminder.');
+    } finally {
+      setSendingReminder(false);
+    }
+  };
 
   return (
     <div className="space-y-6 pb-28 md:pb-6">
@@ -646,108 +719,97 @@ export default function AdminRequestDetailPage({
           </div>
 
           {/* 4. Real Location, Dispatch & Live GPS Ride Controls (order-4 on mobile) */}
-          <div className="order-4 lg:order-none bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-red-600" />
-                  <span>Customer Location & Live Dispatch</span>
+          <div className="order-4 lg:order-none bg-white rounded-lg border border-slate-200 p-3.5 sm:p-5 shadow-sm space-y-3">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-1.5">
+                <MapPin className="w-4 h-4 text-red-600 shrink-0" />
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900">
+                  Customer Location & Live Dispatch
                 </h3>
-                <p className="text-[11px] text-slate-500">
-                  Real GPS coordinates, reverse-geocoded place name, and real-time technician ride tracking
-                </p>
               </div>
 
               {request.latitude && request.longitude && (
-                <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 flex items-center gap-1 font-bold">
-                  <Compass className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-[10px] sm:text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 flex items-center gap-1 font-bold shrink-0">
+                  <Compass className="w-3 h-3 text-emerald-600" />
                   <span>GPS: {request.latitude.toFixed(5)}, {request.longitude.toFixed(5)}</span>
                 </span>
               )}
             </div>
 
-            {/* Location & IP Details Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
-              <div className="sm:col-span-2 p-3 rounded-lg bg-slate-50 border border-slate-200">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
+            {/* Location & IP Details Grid - Compact 1-row side-by-side */}
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              <div className="col-span-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">
                   Verified Place & Street Address
                 </span>
-                <div className="font-extrabold text-slate-900 text-sm">
-                  {request.customerLocationName ? (
-                    <span className="text-red-700 mr-1.5 font-bold">[{request.customerLocationName}]</span>
-                  ) : null}
+                <div className="font-extrabold text-slate-900 text-xs sm:text-sm truncate mt-0.5">
+                  {request.customerLocationName && (
+                    <span className="text-red-700 mr-1 font-bold">[{request.customerLocationName}]</span>
+                  )}
                   {request.address}
                 </div>
-                <div className="text-[11px] text-slate-600 mt-1 font-semibold">
+                <div className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
                   Area: {request.area || 'Kathmandu Valley'} | City: {request.city}
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
+              <div className="col-span-1 p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col justify-between">
                 <div>
-                  <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider mb-0.5">
-                    Customer Booking IP
+                  <span className="text-slate-400 block text-[9px] uppercase font-bold tracking-wider">
+                    Booking IP
                   </span>
-                  <div className="font-mono font-bold text-slate-800 text-xs flex items-center gap-1 mt-0.5">
-                    <Globe className="w-3.5 h-3.5 text-blue-600" />
-                    <span>{request.ipAddress || 'Not recorded'}</span>
+                  <div className="font-mono font-bold text-slate-800 text-[11px] sm:text-xs flex items-center gap-1 mt-0.5 truncate">
+                    <Globe className="w-3 h-3 text-blue-600 shrink-0" />
+                    <span className="truncate">{request.ipAddress || 'Not recorded'}</span>
                   </div>
                 </div>
-                <div className="text-[10px] text-slate-400 mt-2">
-                  Nepal ISP Network Verification
+                <div className="text-[9px] text-slate-400 truncate">
+                  ISP Verified
                 </div>
               </div>
             </div>
 
-            {/* Technician Live Ride Dispatch Controller Banner */}
-            <div className={`p-4 rounded-xl border transition-all ${
-              rideStarted
-                ? 'bg-emerald-950 text-white border-emerald-500 shadow-md ring-2 ring-emerald-500/20'
-                : 'bg-slate-900 text-white border-slate-800'
-            }`}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
+            {/* Technician Live Ride Dispatch Controller Banner - Clean Normal Human Made Style */}
+            <div className="bg-white p-3 rounded-lg border border-slate-200">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    {rideStarted ? (
-                      <span className="relative flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
-                      </span>
-                    ) : (
-                      <span className="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
-                    )}
-                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                    <Bike className={`w-4 h-4 shrink-0 ${rideStarted ? 'text-red-600' : 'text-slate-600'}`} />
+                    <span className="text-xs font-bold text-slate-800">
                       {rideStarted ? 'Live Ride Active (Technician Dispatched)' : 'Technician Dispatch Standby'}
+                    </span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${
+                      rideStarted ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {rideStarted ? 'Active' : 'Standby'}
                     </span>
                   </div>
 
-                  <h4 className="text-sm font-bold text-white">
+                  <div className="text-[11px] text-slate-500 truncate mt-0.5">
                     {rideStarted
                       ? 'Broadcasting real GPS to customer tracking page'
-                      : 'Click below to start technician ride & broadcast real GPS'}
-                  </h4>
+                      : 'Click to start technician ride and broadcast GPS'}
+                  </div>
 
                   {broadcastStatus && (
-                    <p className="text-[11px] text-emerald-200/90 font-mono mt-0.5">
+                    <div className="text-[10px] text-slate-700 font-mono truncate mt-0.5">
                       {broadcastStatus}
-                    </p>
+                    </div>
                   )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleToggleRide}
-                    className={`px-4 py-2.5 rounded-xl font-black text-xs shadow-md transition-all flex items-center gap-2 ${
-                      rideStarted
-                        ? 'bg-red-600 hover:bg-red-700 text-white border border-red-500'
-                        : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                    }`}
-                  >
-                    <Bike className="w-4 h-4" />
-                    <span>{rideStarted ? 'End / Stop Ride' : 'Start Ride (Dispatched on Bike)'}</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleRide}
+                  className={`px-3 py-1.5 rounded-md font-bold text-xs transition-colors shrink-0 flex items-center gap-1.5 ${
+                    rideStarted
+                      ? 'bg-red-600 hover:bg-red-700 text-white'
+                      : 'bg-slate-900 hover:bg-slate-800 text-white'
+                  }`}
+                >
+                  <Bike className="w-3.5 h-3.5" />
+                  <span>{rideStarted ? 'Stop Ride' : 'Start Ride'}</span>
+                </button>
               </div>
             </div>
 
@@ -756,7 +818,7 @@ export default function AdminRequestDetailPage({
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-600">
                   <span className="font-bold flex items-center gap-1.5 text-slate-800">
-                    <Radio className="w-3.5 h-3.5 text-red-600 animate-pulse" />
+                    <Radio className="w-3.5 h-3.5 text-slate-700" />
                     <span>Live Dispatch & Road Route Map</span>
                   </span>
                   <span className="text-[11px] text-slate-500">
@@ -917,6 +979,82 @@ export default function AdminRequestDetailPage({
                 />
               </div>
 
+              <div>
+                <label className="form-label text-xs font-bold text-slate-700 flex items-center justify-between">
+                  <span>Payment Due Date</span>
+                  <span className="text-slate-400 font-normal text-[11px]">(For Outstanding Dues)</span>
+                </label>
+                <input
+                  type="date"
+                  value={paymentDueDate}
+                  onChange={(e) => setPaymentDueDate(e.target.value)}
+                  className="form-input text-xs font-medium mt-1 bg-white"
+                />
+              </div>
+
+              {/* Outstanding Balance & Automated 2-Day Reminder Notice */}
+              {balanceDue > 0 && (
+                <div className="bg-amber-50/80 border border-amber-200 rounded-lg p-3.5 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-amber-900 flex items-center gap-1.5">
+                      <BellRing className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Pending Due: Rs. {balanceDue.toLocaleString('en-IN')}</span>
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                      Auto 2-Day Reminders Active
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-amber-800">
+                    {request.lastReminderSentAt ? (
+                      <>
+                        Last reminder sent: <strong>{new Date(request.lastReminderSentAt).toLocaleDateString()} at {new Date(request.lastReminderSentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong> ({request.reminderCount} sent so far).
+                      </>
+                    ) : (
+                      <>No manual reminder sent yet. System automatically emails PDF tax invoices & payment reminders every 48 hours until settled.</>
+                    )}
+                  </p>
+
+                  {reminderSuccessMsg && (
+                    <div className="text-[11px] font-bold text-emerald-800 bg-emerald-100/60 p-2 rounded border border-emerald-200">
+                      ✓ {reminderSuccessMsg}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleSendPaymentReminder}
+                      disabled={sendingReminder || !request.customerEmail}
+                      className="px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>{sendingReminder ? 'Sending PDF...' : 'Email Invoice & Reminder (PDF)'}</span>
+                    </button>
+
+                    <a
+                      href={paymentReminderWhatsAppLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>WhatsApp Reminder</span>
+                    </a>
+
+                    <a
+                      href={`/api/requests/${params.id}/invoice`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                      <span>Download PDF Invoice</span>
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {/* Quick Helper Actions */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100">
                 <div className="text-xs">
@@ -931,19 +1069,33 @@ export default function AdminRequestDetailPage({
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleMarkFullPaid}
-                  className="text-xs px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 transition-colors"
-                >
-                  Mark Full Payment Received
-                </button>
+                <div className="flex items-center gap-2">
+                  {balanceDue === 0 && (
+                    <a
+                      href={`/api/requests/${params.id}/invoice`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs px-3 py-1.5 rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold flex items-center gap-1.5 transition-colors"
+                    >
+                      <FileDown className="w-3.5 h-3.5" />
+                      <span>Download PDF Invoice</span>
+                    </a>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleMarkFullPaid}
+                    className="text-xs px-3 py-1.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold border border-emerald-200 transition-colors"
+                  >
+                    Mark Full Payment Received
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Customer Booking History (Repeat Client Record) */}
-            <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="bg-white rounded-lg border border-slate-200 p-4 sm:p-5 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                 <div className="flex items-center gap-2">
                   <History className="w-4 h-4 text-blue-600" />
                   <h3 className="text-sm font-bold text-slate-900">
@@ -958,27 +1110,34 @@ export default function AdminRequestDetailPage({
                   This is the customer's 1st registered service booking with Voltix Nepal.
                 </p>
               ) : (
-                <div className="space-y-2 text-xs">
-                  <p className="text-xs font-semibold text-slate-700">
-                    This customer has completed / booked <strong>{customerHistory.length} service requests</strong>:
-                  </p>
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span>
+                      {customerHistory.length > 2 && !showAllHistory ? (
+                        <>Showing latest <strong>2</strong> of <strong>{customerHistory.length}</strong> service requests:</>
+                      ) : (
+                        <>Total <strong>{customerHistory.length}</strong> service requests recorded:</>
+                      )}
+                    </span>
+                  </div>
+
                   <div className="divide-y divide-slate-100 border border-slate-200 rounded-lg overflow-hidden">
-                    {customerHistory.map((hist) => (
+                    {(showAllHistory ? customerHistory : customerHistory.slice(0, 2)).map((hist) => (
                       <div
                         key={hist.id}
-                        className={`p-3 flex items-center justify-between gap-3 ${
+                        className={`p-2.5 sm:p-3 flex items-center justify-between gap-2 sm:gap-3 ${
                           hist.id === request.id ? 'bg-red-50/40 font-semibold' : 'bg-white'
                         }`}
                       >
-                        <div>
-                          <div className="font-mono text-red-600 font-bold">
+                        <div className="min-w-0">
+                          <div className="font-mono text-red-600 font-bold whitespace-nowrap text-xs">
                             {hist.requestId}
                           </div>
-                          <div className="text-slate-800 text-xs">
+                          <div className="text-slate-800 text-xs truncate">
                             {hist.serviceName}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                           <PaymentBadge
                             status={hist.paymentStatus}
                             amount={hist.paidAmount || hist.billedAmount}
@@ -988,7 +1147,7 @@ export default function AdminRequestDetailPage({
                           {hist.id !== request.id && (
                             <Link
                               href={`/admin/requests/${hist.id}`}
-                              className="btn-secondary text-[11px] py-1 px-2.5"
+                              className="btn-secondary text-[11px] py-1 px-2"
                             >
                               View
                             </Link>
@@ -997,128 +1156,150 @@ export default function AdminRequestDetailPage({
                       </div>
                     ))}
                   </div>
+
+                  {customerHistory.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllHistory(!showAllHistory)}
+                      className="w-full py-1.5 px-3 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200 rounded-md text-xs font-semibold text-slate-700 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      {showAllHistory ? (
+                        <>
+                          <ChevronUp className="w-3.5 h-3.5" />
+                          <span>Show Less</span>
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-3.5 h-3.5" />
+                          <span>Show More ({customerHistory.length - 2} more)</span>
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right (4 cols): Dispatch & Status Controls */}
-        <div className="contents lg:flex lg:flex-col lg:col-span-4 space-y-6 w-full">
-          {/* 2. Customer Contact Card (order-2 on mobile) */}
-          <div className="order-2 lg:order-none bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
-              Customer Contact
-            </h3>
+        {/* Right (4 cols on desktop, 2-col side-by-side on mobile phone) */}
+        <div className="order-2 lg:order-none lg:col-span-4 w-full">
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4 lg:space-y-6 lg:gap-0 w-full items-start">
+            {/* 2. Customer Contact Card */}
+            <div className="bg-white rounded-lg border border-slate-200 p-3.5 sm:p-5 lg:p-6 shadow-sm space-y-3 h-full">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 border-b border-slate-100 pb-2.5">
+                Customer Contact
+              </h3>
 
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold">
-                  <User className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-slate-900 text-sm">
-                      {request.customerName}
-                    </span>
-                    <CustomerLoyaltyBadge count={request.customerRequestCount} />
+              <div className="space-y-2.5 text-xs">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0">
+                    <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
-                  <div className="text-[11px] text-slate-500">
-                    Prefers {request.preferredContact}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                        {request.customerName}
+                      </span>
+                      <CustomerLoyaltyBadge count={request.customerRequestCount} />
+                    </div>
+                    <div className="text-[10px] sm:text-[11px] text-slate-500">
+                      Prefers {request.preferredContact}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="space-y-2 pt-2">
-                <a
-                  href={`tel:${request.customerPhone}`}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors"
-                >
-                  <Phone className="w-3.5 h-3.5 text-red-600" />
-                  <span>Call {request.customerPhone}</span>
-                </a>
-
-                <a
-                  href={customerWhatsAppLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors"
-                >
-                  <MessageSquare className="w-3.5 h-3.5 fill-current" />
-                  <span>Open WhatsApp Chat</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-
-                {request.customerEmail && (
+                <div className="space-y-1.5 pt-1">
                   <a
-                    href={`mailto:${request.customerEmail}?subject=VoltixNepal%20Service%20Request%20%23${request.requestId}`}
-                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-xs transition-colors"
+                    href={`tel:${request.customerPhone}`}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-[11px] sm:text-xs transition-colors"
                   >
-                    <Mail className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Send Direct Email</span>
+                    <Phone className="w-3 h-3 text-red-600 shrink-0" />
+                    <span className="truncate">Call {request.customerPhone}</span>
                   </a>
-                )}
+
+                  <a
+                    href={customerWhatsAppLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] sm:text-xs transition-colors"
+                  >
+                    <MessageSquare className="w-3 h-3 fill-current shrink-0" />
+                    <span className="truncate">WhatsApp Chat</span>
+                    <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                  </a>
+
+                  {request.customerEmail && (
+                    <a
+                      href={`mailto:${request.customerEmail}?subject=VoltixNepal%20Service%20Request%20%23${request.requestId}`}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-[11px] sm:text-xs transition-colors"
+                    >
+                      <Mail className="w-3 h-3 text-slate-500 shrink-0" />
+                      <span className="truncate">Send Email</span>
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* 3. Status & Assignment Box (order-3 on mobile, directly below customer contact) */}
-          <div className="order-3 lg:order-none bg-white rounded-lg border border-slate-200 p-6 shadow-2xs space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-3">
-              Update Request & Save
-            </h3>
+            {/* 3. Status & Assignment Box */}
+            <div className="bg-white rounded-lg border border-slate-200 p-3.5 sm:p-5 lg:p-6 shadow-sm space-y-3 h-full">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 border-b border-slate-100 pb-2.5">
+                Update Request & Save
+              </h3>
 
-            <div className="space-y-3">
-              <div>
-                <label className="form-label text-xs">Job Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="form-input text-xs bg-white font-semibold"
+              <div className="space-y-2.5 text-xs">
+                <div>
+                  <label className="form-label text-[11px] sm:text-xs mb-1">Job Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="form-input text-xs py-1.5 px-2 bg-white font-semibold"
+                  >
+                    <option value="NEW">New</option>
+                    <option value="CONTACTED">Contacted</option>
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label text-[11px] sm:text-xs mb-1">Assigned Technician</label>
+                  <input
+                    type="text"
+                    value={adminAssigned}
+                    onChange={(e) => setAdminAssigned(e.target.value)}
+                    className="form-input text-xs py-1.5 px-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label text-[11px] sm:text-xs mb-1">Internal Notes / Log</label>
+                  <textarea
+                    rows={2}
+                    value={internalNotes}
+                    onChange={(e) => setInternalNotes(e.target.value)}
+                    placeholder="e.g. Visited site at 10 AM..."
+                    className="form-input text-xs py-1.5 px-2"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="btn-primary w-full py-2 text-xs font-bold flex items-center justify-center gap-1.5"
                 >
-                  <option value="NEW">New</option>
-                  <option value="CONTACTED">Contacted</option>
-                  <option value="CONFIRMED">Confirmed</option>
-                  <option value="IN_PROGRESS">In Progress</option>
-                  <option value="COMPLETED">Completed</option>
-                  <option value="CANCELLED">Cancelled</option>
-                </select>
+                  {saving ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
+                  <span>Save Changes</span>
+                </button>
               </div>
-
-              <div>
-                <label className="form-label text-xs">Assigned Technician</label>
-                <input
-                  type="text"
-                  value={adminAssigned}
-                  onChange={(e) => setAdminAssigned(e.target.value)}
-                  className="form-input text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="form-label text-xs">Internal Notes / Work Log</label>
-                <textarea
-                  rows={3}
-                  value={internalNotes}
-                  onChange={(e) => setInternalNotes(e.target.value)}
-                  placeholder="e.g. Visited site at 10 AM, identified short circuit in bedroom 2..."
-                  className="form-input text-xs"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="btn-primary w-full py-2.5 text-xs font-bold flex items-center justify-center gap-2"
-              >
-                {saving ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Save className="w-3.5 h-3.5" />
-                )}
-                <span>Save Request & Billing</span>
-              </button>
             </div>
           </div>
         </div>

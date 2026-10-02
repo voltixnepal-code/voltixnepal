@@ -76,3 +76,11 @@ body {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded text-xs font-bold tracking-wider uppercase;
   }
 }
+
+/* Leaflet Custom Marker Resets */
+.leaflet-div-icon.voltix-customer-marker,
+.leaflet-div-icon.voltix-technician-marker {
+  background: transparent !important;
+  border: none !important;
+}
+

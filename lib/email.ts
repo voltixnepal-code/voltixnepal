@@ -1094,6 +1094,9 @@ export async function sendPaymentInvoiceEmail(
     paymentNotes?: string | null;
     adminAssigned?: string | null;
     paidAt?: Date | null;
+    paymentDueDate?: Date | string | null;
+    isReminder?: boolean;
+    reminderCount?: number;
   },
   businessSettings?: { phone?: string; whatsappNumber?: string }
 ): Promise<{ success: boolean; error?: string }> {
@@ -1109,6 +1112,14 @@ export async function sendPaymentInvoiceEmail(
   const formattedBilled = (data.billedAmount || data.paidAmount || 0).toLocaleString('en-IN');
   const formattedPaid = (data.paidAmount || 0).toLocaleString('en-IN');
   const balanceDue = Math.max(0, (data.billedAmount || 0) - (data.paidAmount || 0));
+  const isDue = balanceDue > 0;
+  const dueDateStr = data.paymentDueDate
+    ? new Date(data.paymentDueDate).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
 
   let pdfAttachment: Buffer | null = null;
   try {
@@ -1128,6 +1139,7 @@ export async function sendPaymentInvoiceEmail(
       paymentStatus: data.paymentStatus,
       paymentMethod: data.paymentMethod,
       paymentNotes: data.paymentNotes,
+      paymentDueDate: data.paymentDueDate,
       adminAssigned: data.adminAssigned,
     });
   } catch (pdfErr) {
@@ -1148,19 +1160,29 @@ export async function sendPaymentInvoiceEmail(
       <td align="center">
         <table role="presentation" width="100%" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; text-align: left;">
           
-          ${getEmailHeaderHtml('Official Tax Invoice & Payment Receipt')}
+          ${getEmailHeaderHtml(isDue ? 'Tax Invoice & Payment Due Notice' : 'Official Tax Invoice & Payment Receipt')}
 
           <!-- Title Banner -->
           <tr>
             <td style="padding: 24px 30px 10px;">
-              <div style="font-size: 12px; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px;">
-                Payment Confirmation (${data.paymentStatus === 'PAID' ? 'Fully Paid' : 'Payment Received'})
+              <div style="font-size: 12px; font-weight: 700; color: ${isDue ? '#dc2626' : '#16a34a'}; text-transform: uppercase; letter-spacing: 0.5px;">
+                ${
+                  isDue
+                    ? data.isReminder
+                      ? `⚠️ Payment Due Reminder${data.reminderCount ? ` (#${data.reminderCount})` : ''}`
+                      : '⚠️ Action Required: Outstanding Payment Due'
+                    : 'Payment Confirmation (Fully Paid)'
+                }
               </div>
               <h1 style="margin: 6px 0 0; font-size: 20px; font-weight: 800; color: #0f172a;">
                 Invoice #${invoiceNumber}
               </h1>
               <p style="margin: 6px 0 0; font-size: 14px; color: #334155; line-height: 1.5;">
-                Dear <strong>${data.customerName}</strong>, thank you for your payment for electrical services. A copy of your official PDF tax invoice is attached to this email.
+                ${
+                  isDue
+                    ? `Dear <strong>${data.customerName}</strong>, this is a notice regarding your electrical service (Request #${data.requestId}). A remaining balance of <strong>Rs. ${balanceDue.toLocaleString('en-IN')}</strong> is currently pending${dueDateStr ? ` and due by <strong>${dueDateStr}</strong>` : ''}. Please find your official PDF tax invoice attached.`
+                    : `Dear <strong>${data.customerName}</strong>, thank you for your payment for electrical services. A copy of your official PDF tax invoice is attached to this email.`
+                }
               </p>
             </td>
           </tr>
@@ -1235,7 +1257,40 @@ export async function sendPaymentInvoiceEmail(
             </td>
           </tr>
 
-          <!-- Trustpilot Review Invitation Card -->
+          <!-- Fast Payment Settlement Block for Outstanding Dues -->
+          ${isDue ? `
+          <tr>
+            <td style="padding: 0 30px 20px;">
+              <div style="background-color: #fffbeb; border: 1.5px solid #fde68a; border-radius: 8px; padding: 18px 20px;">
+                <div style="font-size: 13px; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px;">
+                  💳 Fast Payment Settlement Options
+                </div>
+                <div style="font-size: 13px; color: #78350f; margin-top: 6px; line-height: 1.5;">
+                  Please clear the pending balance of <strong>Rs. ${balanceDue.toLocaleString('en-IN')}</strong> using any of the following fast payment methods:
+                </div>
+
+                <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                  <div style="padding: 10px 14px; background: #ffffff; border: 1px solid #fde68a; border-radius: 6px;">
+                    <strong>🟢 eSewa ID:</strong> <span style="font-family: monospace; font-size: 14px; font-weight: 700; color: #059669;">9825870047</span> (Sanjit Mishra)
+                  </div>
+                  <div style="padding: 10px 14px; background: #ffffff; border: 1px solid #fde68a; border-radius: 6px; margin-top: 6px;">
+                    <strong>🟣 Khalti ID:</strong> <span style="font-family: monospace; font-size: 14px; font-weight: 700; color: #7c3aed;">9825870047</span> (Sanjit Mishra)
+                  </div>
+                  <div style="padding: 10px 14px; background: #ffffff; border: 1px solid #fde68a; border-radius: 6px; margin-top: 6px;">
+                    <strong>🏦 FonePay / Mobile Banking:</strong> Transfer to phone <span style="font-family: monospace; font-weight: 700;">9825870047</span>
+                  </div>
+                </div>
+
+                <div style="margin-top: 16px; text-align: center;">
+                  <a href="https://wa.me/9779825870047?text=${encodeURIComponent(`Hello Sanjit Mishra, I have paid the pending balance for Invoice #${invoiceNumber} (Rs. ${balanceDue}). Attached is my payment screenshot:`)}" target="_blank" style="display: inline-block; background-color: #16a34a; color: #ffffff; font-size: 12px; font-weight: 800; padding: 10px 22px; border-radius: 6px; text-decoration: none;">
+                    💬 Confirm Payment via WhatsApp (+977 9825870047)
+                  </a>
+                </div>
+              </div>
+            </td>
+          </tr>
+          ` : `
+          <!-- Trustpilot Review Invitation Card (Only when fully settled) -->
           <tr>
             <td style="padding: 0 30px 20px;">
               <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px 20px; text-align: center;">
@@ -1251,6 +1306,7 @@ export async function sendPaymentInvoiceEmail(
               </div>
             </td>
           </tr>
+          `}
 
           <!-- Footer with Social Icons -->
           <tr>
@@ -1268,11 +1324,17 @@ export async function sendPaymentInvoiceEmail(
 `;
 
   try {
+    const mailSubject = isDue
+      ? data.isReminder
+        ? `[Payment Due Reminder${data.reminderCount ? ` #${data.reminderCount}` : ''}] Invoice #${invoiceNumber} (Pending Rs. ${balanceDue.toLocaleString('en-IN')}) — VoltixNepal`
+        : `[Payment Invoice] Tax Invoice & Balance Due #${invoiceNumber} — VoltixNepal`
+      : `[Payment Receipt] Invoice #${invoiceNumber} (Paid in Full) — VoltixNepal`;
+
     const mailOptions: any = {
       from,
       replyTo,
       to: data.customerEmail,
-      subject: `[Payment Receipt] Invoice #${invoiceNumber} — VoltixNepal`,
+      subject: mailSubject,
       html: htmlContent,
     };
 

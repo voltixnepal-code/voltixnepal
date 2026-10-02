@@ -103,6 +103,7 @@ export default function AdminSidebar() {
   }, [pathname]);
 
   const requestSubmenu = [
+    { label: 'Pending Payments', status: 'PENDING_PAYMENT' },
     { label: 'Contacted', status: 'CONTACTED' },
     { label: 'Confirmed', status: 'CONFIRMED' },
     { label: 'In Progress', status: 'IN_PROGRESS' },
@@ -207,6 +208,11 @@ export default function AdminSidebar() {
                           }`}
                         >
                           <span>{sub.label}</span>
+                          {sub.status === 'PENDING_PAYMENT' && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded">
+                              Due
+                            </span>
+                          )}
                           {sub.status === 'COMPLETED' && (
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                           )}

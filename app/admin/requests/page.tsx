@@ -108,6 +108,7 @@ function AdminRequestsContent() {
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
         {[
           { label: 'New Orders (Primary)', status: 'NEW' },
+          { label: '💳 Pending Payments', status: 'PENDING_PAYMENT' },
           { label: 'Contacted', status: 'CONTACTED' },
           { label: 'Confirmed', status: 'CONFIRMED' },
           { label: 'In Progress', status: 'IN_PROGRESS' },
@@ -123,7 +124,11 @@ function AdminRequestsContent() {
               onClick={() => handleStatusChange(tab.status)}
               className={`px-3 py-1.5 rounded-md font-semibold whitespace-nowrap transition-colors ${
                 isActive
-                  ? 'bg-red-600 text-white shadow-xs'
+                  ? tab.status === 'PENDING_PAYMENT'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : 'bg-red-600 text-white shadow-xs'
+                  : tab.status === 'PENDING_PAYMENT'
+                  ? 'bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100'
                   : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
               }`}
             >
@@ -162,6 +167,7 @@ function AdminRequestsContent() {
               className="form-input text-xs py-2 bg-white"
             >
               <option value="ALL">All Statuses</option>
+              <option value="PENDING_PAYMENT">💳 Pending Payment / Unpaid</option>
               <option value="NEW">New (Unreviewed)</option>
               <option value="CONTACTED">Contacted</option>
               <option value="CONFIRMED">Confirmed</option>
@@ -268,8 +274,18 @@ function AdminRequestsContent() {
                         method={req.paymentMethod}
                       />
                       {req.billedAmount > 0 && (
-                        <div className="text-[10px] text-slate-400 mt-0.5">
+                        <div className="text-[10px] text-slate-500 font-medium mt-0.5">
                           Billed: Rs. {Number(req.billedAmount).toLocaleString('en-IN')}
+                        </div>
+                      )}
+                      {Number(req.billedAmount || 0) > Number(req.paidAmount || 0) && req.paymentStatus !== 'PAID' && (
+                        <div className="text-[10px] font-bold text-red-600 mt-0.5">
+                          Due: Rs. {(Number(req.billedAmount || 0) - Number(req.paidAmount || 0)).toLocaleString('en-IN')}
+                        </div>
+                      )}
+                      {req.reminderCount > 0 && (
+                        <div className="text-[9px] text-amber-700 font-medium mt-0.5">
+                          Reminder x{req.reminderCount} sent
                         </div>
                       )}
                     </td>

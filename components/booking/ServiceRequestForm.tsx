@@ -192,16 +192,12 @@ export default function ServiceRequestForm({
       setErrorMessage('Please enter a valid phone or WhatsApp number.');
       return;
     }
-    if (!customerEmail.trim() || !customerEmail.includes('@')) {
-      setErrorMessage('Please enter a valid email address (compulsory for booking confirmation & tracking).');
+    if (customerEmail.trim() && !customerEmail.includes('@')) {
+      setErrorMessage('Please enter a valid email address.');
       return;
     }
     if (!selectedService) {
       setErrorMessage('Please select a service category.');
-      return;
-    }
-    if (!description.trim()) {
-      setErrorMessage('Please provide a brief description of the electrical issue.');
       return;
     }
     if (!address.trim()) {
@@ -229,7 +225,7 @@ export default function ServiceRequestForm({
           urgency,
           preferredDate: preferredDate || undefined,
           preferredTime: preferredTime || undefined,
-          description,
+          description: description.trim() || `${selectedService} service request`,
           address,
           area: area.trim() || undefined,
           city,
@@ -329,16 +325,16 @@ export default function ServiceRequestForm({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="customerEmail" className="form-label">
-                Email Address <span className="text-red-600">*</span>
+              <label htmlFor="customerEmail" className="form-label flex items-center justify-between">
+                <span>Email Address</span>
+                <span className="text-slate-400 font-normal text-xs">(Optional)</span>
               </label>
               <input
                 id="customerEmail"
                 type="email"
-                required
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
-                placeholder="e.g. ramesh@example.com"
+                placeholder="e.g. ramesh@example.com (optional)"
                 className="form-input"
               />
             </div>
@@ -431,16 +427,16 @@ export default function ServiceRequestForm({
           </div>
 
           <div>
-            <label htmlFor="problemDesc" className="form-label">
-              Problem / Requirement Description <span className="text-red-600">*</span>
+            <label htmlFor="problemDesc" className="form-label flex items-center justify-between">
+              <span>Problem / Requirement Description</span>
+              <span className="text-slate-400 font-normal text-xs">(Optional)</span>
             </label>
             <textarea
               id="problemDesc"
-              required
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="e.g. Main MCB trips when water heater is switched on, or need complete 3BHK house wiring estimation..."
+              placeholder="e.g. Main MCB trips when water heater is switched on, or need complete 3BHK house wiring estimation... (optional)"
               className="form-input"
             />
           </div>

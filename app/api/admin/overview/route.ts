@@ -107,6 +107,9 @@ export async function GET(req: NextRequest) {
     });
 
     const pendingReceivable = Math.max(0, totalBilled - totalEarnings);
+    const pendingCount = allRequests.filter(
+      (r) => Number(r.billedAmount || 0) > Number(r.paidAmount || 0) && r.paymentStatus !== 'PAID'
+    ).length;
 
     // Decorate recent requests with customer repeat booking count
     const recentRequests = allRequests.slice(0, 8).map((r) => {
@@ -142,6 +145,7 @@ export async function GET(req: NextRequest) {
         totalEarnings,
         totalBilled,
         pendingReceivable,
+        pendingCount,
         todayPaidCount,
         monthPaidCount,
       },

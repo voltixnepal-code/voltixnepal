@@ -18,6 +18,7 @@ export interface InvoiceData {
   paymentStatus: string; // "PAID" | "PARTIAL" | "UNPAID"
   paymentMethod?: string | null;
   paymentNotes?: string | null;
+  paymentDueDate?: Date | string | null;
   adminAssigned?: string | null;
 }
 
@@ -234,6 +235,19 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
         .text('BALANCE DUE:', 380, summaryTop + 42)
         .text(`Rs. ${balanceDue.toLocaleString('en-IN')}`, 460, summaryTop + 42, { align: 'right' });
 
+      if (balanceDue > 0 && data.paymentDueDate) {
+        const dueDateStr = new Date(data.paymentDueDate).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+        doc
+          .fontSize(8)
+          .font('Helvetica-Bold')
+          .fillColor('#dc2626')
+          .text(`PAYMENT DUE BY: ${dueDateStr.toUpperCase()}`, 370, summaryTop + 64, { align: 'right', width: 185 });
+      }
+
       // Notes / Payment Details (Left of summary)
       if (data.paymentNotes) {
         doc
@@ -250,6 +264,28 @@ export async function generateInvoicePdfBuffer(data: InvoiceData): Promise<Buffe
           .font('Helvetica')
           .fillColor('#64748b')
           .text(data.paymentNotes, 50, summaryTop + 22, { width: 290 });
+      } else if (balanceDue > 0) {
+        doc
+          .roundedRect(40, summaryTop, 310, 60, 4)
+          .fillColor('#fffbeb')
+          .fillAndStroke('#fffbeb', '#fde68a');
+
+        doc
+          .fontSize(8.5)
+          .font('Helvetica-Bold')
+          .fillColor('#92400e')
+          .text('PAYMENT METHODS & HOW TO PAY:', 50, summaryTop + 8)
+          .fontSize(8)
+          .font('Helvetica')
+          .fillColor('#78350f')
+          .text(
+            '• eSewa / Khalti ID: 9825870047 (Sanjit Mishra)\n' +
+            '• Cash or Mobile Banking FonePay directly to technician\n' +
+            '• Send payment screenshot via WhatsApp: +977 9825870047',
+            50,
+            summaryTop + 22,
+            { width: 290, lineGap: 2 }
+          );
       }
 
       // Terms & Guarantee Section

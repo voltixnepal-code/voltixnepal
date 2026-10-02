@@ -11,14 +11,20 @@ const db: any = prisma;
 const requestSchema = z.object({
   customerName: z.string().min(2, 'Name must be at least 2 characters'),
   customerPhone: z.string().min(7, 'Please provide a valid phone number'),
-  customerEmail: z.string().email('Please provide a valid email address'),
+  customerEmail: z
+    .string()
+    .trim()
+    .email('Please provide a valid email address')
+    .optional()
+    .or(z.literal(''))
+    .nullable(),
   preferredContact: z.enum(['WHATSAPP', 'PHONE', 'EMAIL']).default('WHATSAPP'),
   serviceId: z.string().optional(),
   serviceName: z.string().min(2, 'Please select or specify a service'),
   urgency: z.enum(['NORMAL', 'URGENT', 'EMERGENCY']).default('NORMAL'),
   preferredDate: z.string().optional(),
   preferredTime: z.string().optional(),
-  description: z.string().min(5, 'Please describe your electrical requirement or problem'),
+  description: z.string().optional().default(''),
   address: z.string().min(3, 'Address is required'),
   area: z.string().optional(),
   city: z.string().default('Kathmandu'),
@@ -131,14 +137,14 @@ export async function POST(req: NextRequest) {
             userId: linkedUserId,
             customerName: validated.customerName,
             customerPhone: validated.customerPhone,
-            customerEmail: validated.customerEmail || null,
+            customerEmail: validated.customerEmail?.trim() || null,
             preferredContact: validated.preferredContact,
             serviceId: validated.serviceId || null,
             serviceName: validated.serviceName,
             urgency: validated.urgency,
             preferredDate: validated.preferredDate || null,
             preferredTime: validated.preferredTime || null,
-            description: validated.description,
+            description: validated.description?.trim() || `${validated.serviceName} service request`,
             address: validated.address,
             area: validated.area || null,
             city: validated.city || 'Kathmandu',
@@ -187,12 +193,12 @@ export async function POST(req: NextRequest) {
       requestId,
       customerName: validated.customerName,
       customerPhone: validated.customerPhone,
-      customerEmail: validated.customerEmail,
+      customerEmail: validated.customerEmail?.trim() || null,
       serviceName: validated.serviceName,
       urgency: validated.urgency,
       preferredDate: validated.preferredDate,
       preferredTime: validated.preferredTime,
-      description: validated.description,
+      description: validated.description?.trim() || `${validated.serviceName} service request`,
       address: validated.address,
       area: validated.area,
       city: validated.city,
@@ -326,7 +332,19 @@ export async function GET(req: NextRequest) {
     }
 
     const whereClause: any = {};
-    if (status && status !== 'ALL') whereClause.status = status;
+    const paymentStatusParam = searchParams.get('paymentStatus');
+
+    if (status === 'PENDING_PAYMENT' || paymentStatusParam === 'PENDING') {
+      whereClause.paymentStatus = { not: 'PAID' };
+      whereClause.billedAmount = { gt: 0 };
+    } else if (status && status !== 'ALL') {
+      whereClause.status = status;
+    }
+
+    if (paymentStatusParam && paymentStatusParam !== 'ALL' && paymentStatusParam !== 'PENDING') {
+      whereClause.paymentStatus = paymentStatusParam;
+    }
+
     if (urgency && urgency !== 'ALL') whereClause.urgency = urgency;
     if (query) {
       whereClause.OR = [

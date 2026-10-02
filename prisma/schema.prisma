@@ -68,6 +68,9 @@ model ServiceRequest {
   paymentMethod    String?  @default("CASH")   // "CASH", "ESEWA", "KHALTI", "BANK_TRANSFER", "FONEPAY"
   paymentNotes     String?
   paidAt           DateTime?
+  paymentDueDate   DateTime?
+  lastReminderSentAt DateTime?
+  reminderCount    Int      @default(0)
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
